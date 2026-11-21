@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page not found · ARFORGE</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style>
+    :root { --bg: #000; --fg: #f2efe9; --muted: #8c8880; --accent: #ff5a1f; --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100svh; display: grid; place-items: center; background: var(--bg); color: var(--fg); font-family: 'Geist Variable', system-ui, sans-serif; overflow: hidden; }
+    main { text-align: center; padding: 24px; position: relative; z-index: 1; }
+    .code { font-size: 128px; line-height: 1; font-weight: 600; letter-spacing: -0.06em; display: flex; justify-content: center; gap: 8px; margin: 0 0 24px; }
+    .code span { display: inline-block; animation: cool 3s var(--ease) both; }
+    .code span:nth-child(2) { animation-delay: 0.15s; } .code span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes cool { 0% { color: #fff3c4; text-shadow: 0 0 40px var(--accent); transform: translateY(-20px); } 40% { color: var(--accent); text-shadow: 0 0 24px var(--accent); } 100% { color: #3a3835; text-shadow: none; transform: none; } }
+    h1 { font-size: 30px; line-height: 36px; font-weight: 600; margin: 0 0 12px; text-wrap: balance; }
+    p { font-size: 16px; line-height: 24px; color: var(--muted); margin: 0 0 32px; text-wrap: pretty; }
+    a { display: inline-flex; gap: 8px; align-items: center; padding: 12px 24px; border-radius: 12px; background: var(--accent); color: #000; font-weight: 600; text-decoration: none; transition: transform 500ms var(--ease); }
+    a:hover { transform: translateY(-2px); } a:active { transform: scale(0.98); }
+    a:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+    .crack { position: fixed; inset: 0; pointer-events: none; opacity: 0.25; }
+    @media (max-width: 560px) { .code { font-size: 72px; } h1 { font-size: 24px; line-height: 32px; } }
+    @media (prefers-reduced-motion: reduce) { .code span { animation: none; color: #3a3835; } }
+  </style>
+</head>
+<body>
+  <svg class="crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 52 L22 49 L31 57 L47 46 L58 55 L71 44 L84 53 L100 48" fill="none" stroke="#ff5a1f" stroke-width="0.15"/></svg>
+  <main>
+    <p class="code" aria-label="404"><span>4</span><span>0</span><span>4</span></p>
+    <h1>This page cooled before we could forge it.</h1>
+    <p>The address does not exist, or it moved. Everything we build is one click away.</p>
+    <a href="/arforge/">Back to the forge</a>
+  </main>
+</body>
+</html>

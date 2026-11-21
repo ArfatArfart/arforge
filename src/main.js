@@ -1,0 +1,175 @@
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import './styles/main.css';
+import './styles/fx.css';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import { Stage } from './gl/stage.js';
+import { applyTheme } from './themes.js';
+import { initWords, initTagline } from './fx/words.js';
+import { initCursor, initMagnetic, initNav, initAnchors, initWhy, initSound } from './ui.js';
+import * as S from './sections.js';
+
+gsap.registerPlugin(ScrollTrigger);
+const T0 = performance.now();
+const STILL = new URLSearchParams(location.search).has('still'); // instant final frame, used to render the share image
+const reduced = STILL || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobile = innerWidth < 760;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+document.body.classList.add('is-loading');
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
+/* ---------- visitor time zone → where to point the globe (no permission prompt) */
+function visitorTZ() {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const lon = clamp((-new Date().getTimezoneOffset() / 60) * 15, -180, 180);
+  const region = zone.split('/')[0];
+  const LAT = { Asia: 24, Europe: 48, Africa: 6, America: 36, Australia: -28, Pacific: -12, Atlantic: 30, Indian: -10, Antarctica: -75 };
+  let lat = LAT[region] ?? 20;
+  if (region === 'America' && /Sao_Paulo|Argentina|Santiago|Lima|Bogota|Caracas|Montevideo|La_Paz|Asuncion|Recife|Manaus/.test(zone)) lat = -15;
+  return { zone: zone.replace(/_/g, ' '), lat, lon };
+}
+const tz = visitorTZ();
+
+/* ---------- smooth scroll, one clock for everything */
+const lenis = reduced ? null : new Lenis({ lerp: 0.09, smoothWheel: true, syncTouch: false });
+if (lenis) {
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+  lenis.stop();
+}
+
+/* ---------- the stage (with a graceful fallback when WebGL is missing) */
+const loaderNum = document.getElementById('loader-num');
+const loaderFill = document.getElementById('loader-fill');
+const loaderFile = document.getElementById('loader-file');
+const shown = { v: 0 };
+const onProgress = (p, file) => {
+  gsap.to(shown, { v: p * 100, duration: 0.5, ease: 'power2.out', overwrite: true, onUpdate: () => { loaderNum.textContent = String(Math.round(shown.v)).padStart(3, '0'); } });
+  gsap.to(loaderFill, { scaleX: p, duration: 0.5, ease: 'power2.out', overwrite: true });
+  if (file && file !== 'ready') loaderFile.textContent = `Receiving ${file}`;
+};
+
+let stage;
+try {
+  stage = new Stage(document.getElementById('stage'), { onProgress, mobile, reduced });
+} catch (e) {
+  console.warn('WebGL unavailable, continuing without the 3D stage', e);
+  document.documentElement.classList.add('no-gl');
+  stage = {
+    stats: { fps: 0, ms: 0, tris: 0, calls: 0, ready: 0 }, N: 0, field: { uniforms: { uOpacity: { value: 0 } } },
+    mouseWorld: { x: 0, y: 0 }, sphereSpin: { x: 0, y: 0 }, earthDrag: 0, renderer: { getContext: () => ({ getParameter: () => '', getExtension: () => null, RENDERER: 0 }) },
+    loadCritical: async () => onProgress(1, 'ready'), loadRest: async () => {}, update() {}, resize() {}, setTheme() {}, setPointer() {}, strike() {}, setXray() {},
+  };
+}
+stage.visitor = tz;
+gsap.ticker.add(() => stage.update());
+
+/* ---------- scroll position → which 3D shot (a float: 2.4 = 40% from shot 2 to 3) */
+let shotMap = [];
+function buildShotMap() {
+  const groups = [];
+  document.querySelectorAll('[data-shot]').forEach((el) => {
+    const outer = el.parentElement?.classList.contains('pin-spacer') ? el.parentElement : el;
+    const r = outer.getBoundingClientRect();
+    const top = r.top + window.scrollY, bottom = top + r.height;
+    const id = el.dataset.shot;
+    const last = groups[groups.length - 1];
+    if (last && last.id === id) last.bottom = bottom; else groups.push({ id, top, bottom });
+  });
+  shotMap = groups.map((g) => ({ ...g, index: stage.shots ? stage.shots.findIndex((s) => s.id === g.id) : 0 }));
+}
+function shotAt(y) {
+  const vh = window.innerHeight;
+  for (let k = 0; k < shotMap.length; k++) {
+    const cur = shotMap[k], next = shotMap[k + 1];
+    if (!next) return cur.index;
+    const holdEnd = Math.max(cur.top - 0.15 * vh, cur.bottom - 0.85 * vh);
+    const nextStart = next.top - 0.15 * vh;
+    if (y <= holdEnd) return cur.index;
+    if (y < nextStart) return cur.index + ((y - holdEnd) / Math.max(1, nextStart - holdEnd)) * (next.index - cur.index);
+  }
+  return 0;
+}
+const footerEl = document.getElementById('contact');
+gsap.ticker.add(() => {
+  if (shotMap.length) stage.s = shotAt(window.scrollY);
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const start = footerEl.offsetTop;
+  stage.footerT = clamp((window.scrollY - start) / Math.max(1, max - start), 0, 1);
+});
+ScrollTrigger.addEventListener('refresh', buildShotMap);
+
+window.addEventListener('pointermove', (e) => stage.setPointer((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), { passive: true });
+let rz;
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { stage.resize(); ScrollTrigger.refresh(); }, 180); });
+
+/* ---------- build the page */
+applyTheme('obsidian', stage, true);
+await document.fonts.ready.catch(() => {});
+const headings = initWords({ reduced });
+initTagline(document.getElementById('tagline'), { reduced });
+S.initProcess(stage, reduced);
+document.querySelectorAll('[data-theme]').forEach((sec) => {
+  if (sec === document.documentElement) return;
+  ScrollTrigger.create({ trigger: sec, start: 'top 55%', end: 'bottom 55%', onToggle: (s) => { if (s.isActive) applyTheme(sec.dataset.theme, stage); } });
+});
+initCursor();
+initMagnetic();
+initNav(lenis);
+initAnchors(lenis);
+initSound();
+initWhy(stage);
+S.initMarquee(lenis);
+S.initHud(stage);
+S.initStack(stage);
+S.initMetrics(stage, T0);
+S.initTerminal(stage, tz.zone);
+S.initPhone();
+S.initFaq();
+S.initFooter(stage, tz);
+S.initWork();
+
+// generic reveals: blocks rise 32px and fade once, on the base curve
+const revealSel = '.sec-label, .chapter-body, .spec-list, .model-note, .phone, .terminal, .gauge, .gpu, .faq-list .qa, .stack-copy > p, .chips, .work-sub, .tagline-note, .process-note, .footer-sub, .brief, .footer-mid, .metrics-head > p, .chapter-num';
+document.querySelectorAll(revealSel).forEach((el) => {
+  if (el.closest('#hero')) return;
+  if (reduced) return;
+  gsap.from(el, { y: 32, opacity: 0, duration: 0.8, ease: 'expo.out', scrollTrigger: { trigger: el, start: 'top 90%', once: true } });
+});
+// icons animate only once they are on screen
+document.querySelectorAll('.chapter-num').forEach((n) => ScrollTrigger.create({ trigger: n, start: 'top 85%', once: true, onEnter: () => n.classList.add('in') }));
+
+ScrollTrigger.refresh();
+
+/* ---------- load the forge, then strike */
+async function boot() {
+  try { await stage.loadCritical(); }
+  catch (e) { console.error(e); loaderFile.textContent = 'The 3D scan could not load. Continuing without it.'; onProgress(1, 'ready'); }
+  loaderFile.textContent = 'Strike';
+  await new Promise((r) => setTimeout(r, 350));
+  const loader = document.getElementById('loader');
+  const tl = gsap.timeline();
+  tl.to('.loader-inner', { scale: 0.92, opacity: 0, duration: 0.35, ease: 'power3.in' })
+    .to('.loader-half.top', { yPercent: -100, duration: 1.1, ease: 'expo.inOut' }, '+=0.05')
+    .to('.loader-half.bottom', { yPercent: 100, duration: 1.1, ease: 'expo.inOut' }, '<')
+    .add(() => {
+      stage.introAt = performance.now();
+      gsap.to(stage, { intro: 1, duration: reduced ? 0.01 : 2.8, ease: 'power2.inOut' });
+      if (STILL) document.documentElement.classList.add('still');
+      headings.get(document.getElementById('hero-title'))?.play();
+      gsap.to('.reveal-up', { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.1, delay: 0.5 });
+      S.initHeroProof();
+    }, '<0.25')
+    .add(() => {
+      loader.remove();
+      document.body.classList.remove('is-loading');
+      lenis?.start();
+      ScrollTrigger.refresh();
+    });
+  await stage.loadRest();
+}
+boot();
