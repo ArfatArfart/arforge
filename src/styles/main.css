@@ -659,3 +659,90 @@ html[data-theme='acid'] #cursor .c-ring { border-width: 2px; }
   .eyebrow { font-size: 12px; line-height: 16px; }
   .step { padding: var(--s-300); }
 }
+
+/* =====================================================================
+   PREMIUM V2
+   ===================================================================== */
+.sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---------- Hero: a studio you scroll through ---------- */
+.hero { position: relative; height: 240vh; height: 240svh; display: block; align-content: normal; padding: 0; max-width: none; }
+.hero-sticky { position: sticky; top: 0; height: 100vh; height: 100svh; max-width: var(--maxw); margin: 0 auto; padding: calc(var(--nav-h) + var(--s-700)) var(--gutter) var(--s-800); display: grid; align-content: end; }
+.hero-copy { will-change: opacity, transform; max-width: 900px; }
+@media (min-width: 901px) and (max-width: 1180px) { .hero .display-1 { font-size: 72px; } .hero-copy { max-width: 620px; } }
+.hero-title { text-shadow: none; }
+.hero-chapter { position: absolute; left: var(--gutter); bottom: var(--s-800); max-width: 640px; opacity: 0; will-change: opacity, transform; pointer-events: none; }
+.hero-chapter-k { display: inline-flex; align-items: center; gap: var(--s-75); color: var(--muted); }
+.hero-chapter-t { margin: var(--s-300) 0; }
+.hero-chapter-b { color: var(--muted); max-width: 460px; }
+.hero-turn { position: absolute; right: var(--gutter); bottom: var(--s-400); display: grid; justify-items: end; gap: var(--s-75); color: var(--muted); }
+.turn-bar { display: block; width: 160px; height: 1px; background: var(--line); overflow: hidden; }
+.turn-bar i { display: block; height: 100%; background: var(--fg); transform-origin: left; transform: scaleX(0); }
+.hero .scroll-cue { display: none; }
+
+.callouts { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.callout { position: absolute; left: 0; top: 0; display: flex; align-items: center; opacity: 0; will-change: transform, opacity; }
+.callout .c-dot { width: 9px; height: 9px; flex: none; border-radius: 50%; background: #fff; box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.1), 0 0 18px rgba(255, 255, 255, 0.7); margin-left: -4.5px; }
+.callout .c-line { width: 72px; height: 1px; flex: none; background: linear-gradient(90deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.15)); }
+.callout .c-txt { padding: var(--s-75) var(--s-100); border-radius: 10px; background: rgba(10, 10, 10, 0.55); border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); white-space: nowrap; color: #a8a49c; }
+.callout .c-txt b { color: #fff; font-weight: 500; margin-right: var(--s-75); }
+.callout.left { flex-direction: row-reverse; }
+.callout.left .c-dot { margin-left: 0; margin-right: -4.5px; }
+.callout.left .c-line { background: linear-gradient(270deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.15)); }
+
+/* ---------- Material typography ---------- */
+:root { --sheen: rgba(255, 255, 255, 0.85); }
+html[data-theme='ivory'], html[data-theme='paper'], html[data-theme='chalk'] { --sheen: rgba(255, 255, 255, 0.4); }
+.textured { filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.38)); }
+html[data-theme='ivory'] .textured, html[data-theme='paper'] .textured, html[data-theme='chalk'] .textured { filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.75)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.08)); }
+.tx {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(104deg, transparent 0%, transparent 36%, var(--sheen) 50%, transparent 64%, transparent 100%), var(--tex);
+  background-size: 560px 100%, 620px auto;
+  background-repeat: no-repeat, repeat;
+  background-position: calc(var(--sx, -9999px) - var(--lx, 0px) - 280px) 0, calc(0px - var(--lx, 0px)) calc(0px - var(--ly, 0px));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.w.hollow .tx, .w.hollow.tx { background: none; -webkit-text-stroke: 1.5px var(--fg); }
+.hero-title .tx { background-size: 560px 100%, 900px auto; }
+
+/* ---------- Glass: a hairline lit by the cursor ---------- */
+.glass:where(:not(.nav)) { position: relative; }
+.glass::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 1;
+  background: radial-gradient(240px circle at var(--gx, -300px) var(--gy, -300px), color-mix(in srgb, var(--fg) 70%, transparent), transparent 65%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.glass::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(420px circle at var(--gx, -300px) var(--gy, -300px), color-mix(in srgb, var(--fg) 5%, transparent), transparent 60%);
+}
+.nav.glass::after { display: none; }
+
+/* premium buttons: lit from above, glow on hover */
+.btn-primary { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 8px 24px -12px var(--accent); }
+.btn-primary:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 14px 40px -12px var(--accent); }
+
+/* ---------- Apps: the 3D phone lives in this slot ---------- */
+.phone-slot { position: relative; justify-self: end; width: 340px; aspect-ratio: 0.485; z-index: 2; touch-action: pan-y; border-radius: 48px; }
+.phone-slot:focus-within { outline: 2px solid var(--accent); outline-offset: 12px; }
+.slot-help { position: absolute; left: 50%; bottom: -40px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: var(--s-75); white-space: nowrap; color: var(--muted); }
+.phone-slot.on-screen { cursor: grab; }
+
+/* manifesto shares the stage with the bust */
+.tagline { max-width: min(820px, 56vw); }
+@media (max-width: 900px) { .tagline { max-width: none; } .manifesto { padding-top: 48vh; } }
+
+@media (max-width: 900px) {
+  .hero { height: 200vh; height: 200svh; }
+  .hero-sticky { padding: calc(var(--nav-h) + var(--s-400)) var(--gutter) var(--s-600); }
+  .hero-chapter { bottom: var(--s-600); right: var(--gutter); }
+  .hero-turn { display: none; }
+  .callouts { display: none; }
+  .phone-slot { justify-self: center; width: min(300px, 72vw); margin: var(--s-400) 0 var(--s-700); }
+  .tx { background-size: 420px 100%, 480px auto; }
+}

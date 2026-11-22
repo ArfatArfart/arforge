@@ -291,7 +291,7 @@ export class ShipApp {
   }
   setKnob(v) { if (this.shipped) return; this.knob = Math.min(1, Math.max(0, v)); }
   release() {
-    if (this.knob > 0.86) { this.knob = 1; this.shipped = 0.0001; this.onShip?.(); }
+    if (this.knob > 0.8) { this.knob = 1; this.shipped = 0.0001; this.onShip?.(); }
     this.drag = false;
   }
   draw(dt) {
@@ -325,7 +325,7 @@ export class ShipApp {
     const k = this.track, kx = k.x + this.knob * this.max;
     g.fillStyle = 'rgba(255,255,255,0.08)'; roundRect(g, k.x, k.y, k.w, k.h, k.h / 2); g.fill();
     g.save(); roundRect(g, k.x, k.y, k.w, k.h, k.h / 2); g.clip();
-    g.fillStyle = A; g.fillRect(k.x, k.y, kx - k.x + k.h, k.h); g.restore();
+    g.fillStyle = A; roundRect(g, k.x, k.y, kx - k.x + k.h, k.h, k.h / 2); g.fill(); g.restore();
     g.globalAlpha = 1 - this.knob; g.fillStyle = '#a4a99a'; g.font = '600 30px "Geist Variable", sans-serif'; g.textAlign = 'center';
     g.fillText('Slide to ship', SW / 2 + 30, k.y + k.h / 2 + 11); g.textAlign = 'left'; g.globalAlpha = 1;
     g.fillStyle = '#f4f7ec'; g.beginPath(); g.arc(kx + k.h / 2, k.y + k.h / 2, k.h / 2 - 8, 0, 7); g.fill();

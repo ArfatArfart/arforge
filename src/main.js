@@ -8,7 +8,8 @@ import Lenis from 'lenis';
 import { Stage } from './gl/stage.js';
 import { applyTheme } from './themes.js';
 import { initWords, initTagline } from './fx/words.js';
-import { initCursor, initMagnetic, initNav, initAnchors, initWhy, initSound } from './ui.js';
+import { initCursor, initMagnetic, initNav, initAnchors, initWhy, initSound, initGlass } from './ui.js';
+import { initTextures } from './fx/texture.js';
 import * as S from './sections.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -34,7 +35,7 @@ function visitorTZ() {
 const tz = visitorTZ();
 
 /* ---------- smooth scroll, one clock for everything */
-const lenis = reduced ? null : new Lenis({ lerp: 0.09, smoothWheel: true, syncTouch: false });
+const lenis = reduced ? null : new Lenis({ lerp: 0.075, smoothWheel: true, wheelMultiplier: 0.9, syncTouch: false });
 if (lenis) {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
@@ -66,6 +67,7 @@ try {
   };
 }
 stage.visitor = tz;
+if (import.meta.env.DEV) window.__stage = stage;
 gsap.ticker.add(() => stage.update());
 
 /* ---------- scroll position → which 3D shot (a float: 2.4 = 40% from shot 2 to 3) */
@@ -96,7 +98,7 @@ function shotAt(y) {
 }
 const footerEl = document.getElementById('contact');
 gsap.ticker.add(() => {
-  if (shotMap.length) stage.s = shotAt(window.scrollY);
+  if (shotMap.length) stage.sTarget = shotAt(window.scrollY);
   const max = document.documentElement.scrollHeight - innerHeight;
   const start = footerEl.offsetTop;
   stage.footerT = clamp((window.scrollY - start) / Math.max(1, max - start), 0, 1);
@@ -112,10 +114,24 @@ applyTheme('obsidian', stage, true);
 await document.fonts.ready.catch(() => {});
 const headings = initWords({ reduced });
 initTagline(document.getElementById('tagline'), { reduced });
+initTextures({ reduced });
+initGlass();
 S.initProcess(stage, reduced);
-document.querySelectorAll('[data-theme]').forEach((sec) => {
-  if (sec === document.documentElement) return;
-  ScrollTrigger.create({ trigger: sec, start: 'top 55%', end: 'bottom 55%', onToggle: (s) => { if (s.isActive) applyTheme(sec.dataset.theme, stage); } });
+// themes follow whichever section crosses 55% of the screen, measured from real
+// layout (pin spacers included), so jumping anywhere always lands on the right world
+let themeMap = [];
+const buildThemeMap = () => {
+  themeMap = [...document.querySelectorAll('main [data-theme], footer[data-theme]')].map((sec) => {
+    const outer = sec.parentElement?.classList.contains('pin-spacer') ? sec.parentElement : sec;
+    const r = outer.getBoundingClientRect();
+    return { theme: sec.dataset.theme, top: r.top + window.scrollY, bottom: r.bottom + window.scrollY };
+  });
+};
+ScrollTrigger.addEventListener('refresh', buildThemeMap);
+gsap.ticker.add(() => {
+  const y = window.scrollY + window.innerHeight * 0.55;
+  const hit = themeMap.find((t) => y >= t.top && y < t.bottom) || themeMap[themeMap.length - 1];
+  if (hit) applyTheme(hit.theme, stage);
 });
 initCursor();
 initMagnetic();
@@ -123,18 +139,17 @@ initNav(lenis);
 initAnchors(lenis);
 initSound();
 initWhy(stage);
-S.initMarquee(lenis);
-S.initHud(stage);
+S.initHero(stage);
 S.initStack(stage);
 S.initMetrics(stage, T0);
 S.initTerminal(stage, tz.zone);
-S.initPhone();
+S.initPhone(stage);
 S.initFaq();
 S.initFooter(stage, tz);
 S.initWork();
 
 // generic reveals: blocks rise 32px and fade once, on the base curve
-const revealSel = '.sec-label, .chapter-body, .spec-list, .model-note, .phone, .terminal, .gauge, .gpu, .faq-list .qa, .stack-copy > p, .chips, .work-sub, .tagline-note, .process-note, .footer-sub, .brief, .footer-mid, .metrics-head > p, .chapter-num';
+const revealSel = '.sec-label, .chapter-body, .spec-list, .model-note, .slot-help, .terminal, .gauge, .gpu, .faq-list .qa, .stack-copy > p, .chips, .work-sub, .tagline-note, .process-note, .footer-sub, .brief, .footer-mid, .metrics-head > p, .chapter-num';
 document.querySelectorAll(revealSel).forEach((el) => {
   if (el.closest('#hero')) return;
   if (reduced) return;
@@ -158,7 +173,9 @@ async function boot() {
     .to('.loader-half.bottom', { yPercent: 100, duration: 1.1, ease: 'expo.inOut' }, '<')
     .add(() => {
       stage.introAt = performance.now();
-      gsap.to(stage, { intro: 1, duration: reduced ? 0.01 : 2.8, ease: 'power2.inOut' });
+      gsap.to(stage, { intro: 1, duration: reduced ? 0.01 : 2.6, ease: 'power2.inOut' });
+      // the studio lights come on one by one: key, rim, top, then the first sweep
+      gsap.to(stage, { lights: 1, duration: reduced ? 0.01 : 2.6, delay: reduced ? 0 : 1.5, ease: 'power1.inOut' });
       if (STILL) document.documentElement.classList.add('still');
       headings.get(document.getElementById('hero-title'))?.play();
       gsap.to('.reveal-up', { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.1, delay: 0.5 });

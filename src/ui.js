@@ -228,3 +228,29 @@ export function initSound() {
     if (on) api.strike();
   });
 }
+
+/* ------------------------------------------------------------------ glass
+   Cards carry a hairline border lit by the cursor, like a softbox catching
+   the bevel of a glass panel. Only cards on screen are measured.           */
+export function initGlass() {
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const visible = new Set();
+  const io = new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target))));
+  const add = (el) => io.observe(el);
+  document.querySelectorAll('.glass').forEach(add);
+  window.__glass = add;
+  if (!fine) return;
+  let px = 0, py = 0, raf = 0;
+  window.addEventListener('pointermove', (e) => {
+    px = e.clientX; py = e.clientY;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      visible.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--gx', `${(px - r.left).toFixed(0)}px`);
+        el.style.setProperty('--gy', `${(py - r.top).toFixed(0)}px`);
+      });
+    });
+  }, { passive: true });
+}

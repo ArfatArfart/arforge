@@ -10,7 +10,9 @@ theme, every headline word moves the way it means, and every number on the page 
 
 | Asset | Source | Licence |
 |---|---|---|
-| Marble bust, classic laptop, circuit board, digital watch, cross pein hammer | [Poly Haven](https://polyhaven.com/models) photogrammetry scans | CC0 |
+| Marble bust, classic laptop, circuit board, digital watch, cross pein hammer (2K, watch from the 4K source) | [Poly Haven](https://polyhaven.com/models) photogrammetry scans | CC0 |
+| Type materials: titanium, black marble, blue steel, molten metal, brass, graphite and more | [Poly Haven](https://polyhaven.com/textures) photo textures, re-graded per theme | CC0 |
+| Phone screens | Mobile captures of Arfat's live GitHub Pages projects | Own work |
 | Studio lighting (`studio_small_09`) | Poly Haven HDRI | CC0 |
 | Earth day, night lights, clouds, specular | NASA imagery via the three.js examples | Public domain |
 | Technology logos | [Simple Icons](https://simpleicons.org) | CC0 |
@@ -19,6 +21,10 @@ theme, every headline word moves the way it means, and every number on the page 
 
 ## The ideas
 
+- **A product studio hero.** A flagship class phone engineered in code to real proportions (titanium frame with an anisotropic shader, frosted back with a gloss etched mark, iridescent lenses, buttons, antenna bands, ports) floats with the scanned watch over a glossy floor, under area lights and a moving light sweep. Its screen flicks through Arfat's real projects. Scrolling turns it around while callouts pin to real points on the model.
+- **Cinematic finish.** MSAA HDR buffer, bloom, Neutral tone mapping, film grain, vignette and a touch of chromatic aberration on desktop. Every motion is damped.
+- **Material typography.** Each heading is filled with a real photographic material and a specular band follows your cursor across the letters.
+- **A phone you can use.** In Apps, drag the slider on the 3D phone's own glass: the pointer is raycast onto the screen mesh and drives the app canvas.
 - **One continuous stage.** `src/gl/stage.js` maps scroll position to a float like `2.4`
   (40% of the way from shot 2 to shot 3). The outgoing mesh burns away with a glowing forge edge,
   its surface becomes ~28k particles sampled from the real scan and coloured by its real texture,
@@ -63,6 +69,8 @@ src/
   gl/materials.js    forge dissolve, hero scan slices, Earth and atmosphere shaders
   gl/targets.js      surface sampling of real meshes into particle targets
   gl/screen.js       the live code display mapped onto the laptop screen
+  gl/phone.js        the engineered phone, its showcase screen and the ship app
+  fx/texture.js      material typography with a cursor sheen
 public/
   models/            meshopt + WebP compressed GLBs
   hdri/  textures/   lighting and Earth maps

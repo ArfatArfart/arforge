@@ -393,6 +393,8 @@ export function headingTimeline(h, reduced) {
   return tl;
 }
 
+const CHAR_FX = new Set(['rough', 'flap', 'launch', 'relay', 'type', 'pulse', 'calm', 'strike', 'orbit', 'curious', 'doors']);
+
 export function initWords({ reduced }) {
   const heads = [...document.querySelectorAll('h1,h2,h3')].filter((h) => h.querySelector('.w[data-fx]'));
   const result = new Map();
@@ -402,6 +404,8 @@ export function initWords({ reduced }) {
       const fx = FX[w.dataset.fx];
       if (!fx) return;
       if (!w.dataset.why) w.dataset.why = fx.why;
+      // split letter based effects up front so material textures can map every glyph
+      if (CHAR_FX.has(w.dataset.fx)) chars(w);
       w.setAttribute('aria-label', w.textContent.trim());
       if (reduced) return;
       if (fx.prep) fx.prep(w);

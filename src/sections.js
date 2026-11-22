@@ -68,41 +68,49 @@ export async function initHeroProof() {
   count(document.getElementById('proof-live'), live);
 }
 
-export function initMarquee(lenis) {
-  const track = document.getElementById('marquee');
-  if (!track) return;
-  track.innerHTML += track.innerHTML;
-  let x = 0, skew = 0;
-  const skewTo = gsap.quickSetter(track, 'skewX', 'deg');
-  gsap.ticker.add((t, dt) => {
-    const v = lenis ? lenis.velocity : 0;
-    x -= (0.04 + Math.abs(v) * 0.02) * dt;
-    const half = track.scrollWidth / 2;
-    if (-x > half) x += half;
-    track.style.transform = `translate3d(${x}px,0,0)`;
-    skew += (clamp(v * -0.6, -14, 14) - skew) * 0.1;
-    skewTo(skew);
-  });
-}
-
-export function initHud(stage) {
-  const pct = document.getElementById('scan-pct'), hx = document.getElementById('hud-x'), hy = document.getElementById('hud-y');
-  const label = document.getElementById('scanline-label');
+/* ------------------------------------------------------------- Hero choreography
+   The hero is 240vh tall with a sticky stage. Scrolling through it turns the
+   phone around: the headline steps back, a second line steps in, and
+   Apple style callouts pin themselves to real points on the 3D model.       */
+export function initHero(stage) {
   const hero = document.getElementById('hero');
-  let inHero = true, ready = false;
-  gsap.delayedCall(3.2, () => { ready = true; });
-  hero.addEventListener('pointermove', () => { stage.heroPointerY = 1; });
-  hero.addEventListener('pointerleave', () => { stage.heroPointerY = null; });
-  gsap.ticker.add(() => {
-    inHero = hero.getBoundingClientRect().bottom > window.innerHeight * 0.35;
-    label.classList.toggle('on', inHero && ready);
-    if (!inHero) return;
-    if (stage.scanPct !== undefined) pct.textContent = stage.scanPct.toFixed(1).padStart(4, '0');
-    hx.textContent = stage.mouseWorld.x.toFixed(3); hy.textContent = stage.mouseWorld.y.toFixed(3);
-    if (stage.scanScreen) {
-      const hr = hero.querySelector('.hero-hud').getBoundingClientRect();
-      label.style.transform = `translate(${Math.min(hr.width - 80, stage.scanScreen.x - hr.left)}px, ${stage.scanScreen.y - hr.top - 20}px)`;
-    }
+  const copy = document.getElementById('hero-copy');
+  const chapter = document.getElementById('hero-chapter');
+  const fill = document.getElementById('turn-fill');
+  const sticky = hero.querySelector('.hero-sticky');
+  const items = [...document.querySelectorAll('.callout')].map((el) => ({ el, key: el.dataset.anchor, o: 0 }));
+  const windows = { screen: [0.3, 0.46], watch: [0.3, 0.46], frame: [0.5, 1], lens: [0.68, 1] };
+  const start = performance.now();
+  const sm = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+  gsap.ticker.add((t, dt) => {
+    const max = hero.offsetHeight - window.innerHeight;
+    const ht = clamp(window.scrollY / Math.max(1, max));
+    stage.heroT = ht;
+    if (window.scrollY > hero.offsetHeight) return;
+    const hs = stage.heroTs ?? ht;
+    const out = sm(0.14, 0.4, hs);
+    copy.style.opacity = String(1 - out);
+    copy.style.transform = `translate3d(0, ${(-48 * out).toFixed(1)}px, 0)`;
+    copy.style.pointerEvents = out > 0.5 ? 'none' : '';
+    const inn = sm(0.5, 0.74, hs);
+    chapter.style.opacity = String(inn);
+    chapter.style.transform = `translate3d(0, ${(40 * (1 - inn)).toFixed(1)}px, 0)`;
+    fill.style.transform = `scaleX(${hs.toFixed(3)})`;
+    const wide = window.innerWidth > 1000 && performance.now() - start > 5200;
+    const sr = sticky.getBoundingClientRect();
+    items.forEach((c) => {
+      const a = stage.callouts?.[c.key];
+      const [w0, w1] = windows[c.key];
+      const inWin = sm(w0 - 0.06, w0 + 0.04, hs) * (1 - sm(w1 - 0.04, w1 + 0.04, hs));
+      const target = wide && a ? inWin * a.f : 0;
+      c.o += (target - c.o) * Math.min(1, dt * 0.008);
+      c.el.style.opacity = c.o.toFixed(3);
+      if (a && c.o > 0.01) {
+        const left = a.x > window.innerWidth * 0.78;
+        c.el.classList.toggle('left', left);
+        c.el.style.transform = `translate3d(${(a.x - sr.left).toFixed(1)}px, ${(a.y - sr.top).toFixed(1)}px, 0) translate(${left ? '-100%' : '0'}, -50%)`;
+      }
+    });
   });
 }
 
@@ -128,7 +136,7 @@ export async function initWork() {
     const live = r.homepage || (r.has_pages ? `https://${user.toLowerCase()}.github.io/${c.name}/` : null);
     const desc = r.description || c.desc || 'Source available on GitHub.';
     return `
-      <article class="card ${c.big ? 'big' : ''}">
+      <article class="card glass ${c.big ? 'big' : ''}">
         <a class="card-media" href="${live || r.html_url}" target="_blank" rel="noopener" data-cursor="${live ? 'Open live' : 'Open repo'}">
           <img src="${BASE}work/${c.img}" alt="Screenshot of the ${c.title} live site" loading="lazy" decoding="async" width="1200" height="750" />
           <span class="shine" aria-hidden="true"></span>
@@ -151,6 +159,7 @@ export async function initWork() {
   grid.dataset.why = 'Cards drop in with a slight tilt that settles, like prints laid on a desk, and lean toward your cursor so the one you are reading comes forward.';
 
   const cards = [...grid.querySelectorAll('.card')];
+  cards.forEach((c) => window.__glass?.(c));
   gsap.set(cards, { opacity: 0, y: 60, rotate: () => gsap.utils.random(-3, 3) });
   ScrollTrigger.batch(cards, { start: 'top 88%', once: true, onEnter: (b) => gsap.to(b, { opacity: 1, y: 0, rotate: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08 }) });
   if (matchMedia('(hover: hover)').matches) {
@@ -332,54 +341,57 @@ export function initTerminal(stage, tz) {
   void esc;
 }
 
-/* ==================================================================== Phone */
-export function initPhone() {
-  const time = document.getElementById('phone-time');
-  const tick = () => { time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); };
-  tick(); setInterval(tick, 15000);
-  // chart: a smooth random walk that keeps moving, like live usage data
-  const path = document.getElementById('phone-line');
-  const pts = Array.from({ length: 24 }, (_, i) => 40 + Math.sin(i / 2) * 10);
-  const draw = () => {
-    pts.shift(); pts.push(clamp(pts[pts.length - 1] + (Math.random() - 0.45) * 14, 8, 62));
-    path.setAttribute('d', pts.map((y, i) => `${i ? 'L' : 'M'}${(i / (pts.length - 1)) * 200} ${70 - y}`).join(' '));
-  };
-  draw(); setInterval(draw, 700);
-  const checks = [...document.querySelectorAll('.phone-checks .chk')];
-  ScrollTrigger.create({ trigger: '.phone', start: 'top 75%', once: true, onEnter: () => checks.forEach((c, i) => setTimeout(() => { c.classList.add('ok'); window.__sound?.tick(700 + i * 90); }, 300 + i * 320)) });
-
+/* ==================================================================== Phone
+   The release app runs on the 3D phone's real screen. Pointer events on the
+   slot are raycast onto the screen mesh and converted to canvas pixels, so
+   you drag the knob on the glass itself. A hidden slider keeps it usable
+   from the keyboard and screen readers.                                     */
+export function initPhone(stage) {
+  const slot = document.getElementById('phone-slot');
   const slider = document.getElementById('ship-slider');
-  const knob = slider.querySelector('.slider-knob'), fill = slider.querySelector('.slider-fill'), text = slider.querySelector('.slider-text');
   const toast = document.getElementById('phone-toast');
-  let x = 0, start = null, done = false;
-  const max = () => slider.clientWidth - knob.offsetWidth - 8;
-  const set = (v) => {
-    x = clamp(v, 0, max());
-    knob.style.transform = `translateX(${x}px)`;
-    fill.style.transform = `scaleX(${(x + 26) / slider.clientWidth})`;
-    text.style.opacity = String(1 - x / max());
-    slider.setAttribute('aria-valuenow', String(Math.round((x / max()) * 100)));
+  if (!slot) return;
+  const app = () => stage.app;
+  let drag = null;
+  const toPx = (uv) => ({ x: uv.x * 640, y: (1 - uv.y) * 1360 });
+  const hook = () => {
+    const a = app(); if (!a || a.onShip) return;
+    a.onShip = () => {
+      toast.textContent = 'Build 1.0.0 shipped to testers.';
+      slider.setAttribute('aria-valuenow', '100');
+      window.__sound?.strike();
+      stage.celebrate?.();
+      setTimeout(() => { toast.textContent = ''; slider.setAttribute('aria-valuenow', '0'); }, 3000);
+    };
   };
-  const complete = () => {
-    done = true; set(max());
-    toast.textContent = 'Build 1.0.0 shipped to testers.';
-    window.__sound?.strike();
-    gsap.fromTo(toast, { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'expo.out' });
-    setTimeout(() => { const o = { v: x }; gsap.to(o, { v: 0, duration: 0.8, ease: 'expo.inOut', onUpdate: () => set(o.v), onComplete: () => { done = false; toast.textContent = ''; } }); }, 2600);
-  };
-  knob.addEventListener('pointerdown', (e) => { if (done) return; start = e.clientX - x; knob.setPointerCapture(e.pointerId); });
-  knob.addEventListener('pointermove', (e) => { if (start !== null) set(e.clientX - start); });
-  const release = () => {
-    if (start === null) return; start = null;
-    if (x > max() * 0.85) complete();
-    else { const o = { v: x }; gsap.to(o, { v: 0, duration: 0.7, ease: 'elastic.out(1, 0.5)', onUpdate: () => set(o.v) }); }
-  };
-  knob.addEventListener('pointerup', release); knob.addEventListener('pointercancel', release);
+  slot.addEventListener('pointerdown', (e) => {
+    hook();
+    const uv = stage.pickScreen?.(e.clientX, e.clientY); const a = app();
+    if (!uv || !a) return;
+    const p = toPx(uv);
+    if (a.hitKnob(p.x, p.y)) {
+      // canvas pixels per screen pixel, so the drag keeps tracking past the glass edge
+      const uv2 = stage.pickScreen?.(e.clientX + 24, e.clientY);
+      const ratio = uv2 ? Math.abs(toPx(uv2).x - p.x) / 24 : 2;
+      a.drag = true; drag = { cx: e.clientX, k: a.knob, ratio };
+      slot.setPointerCapture(e.pointerId); e.preventDefault(); window.__sound?.tick(620);
+    }
+  });
+  slot.addEventListener('pointermove', (e) => {
+    const a = app(); if (!a) return;
+    const uv = stage.pickScreen?.(e.clientX, e.clientY);
+    slot.classList.toggle('on-screen', !!uv);
+    if (!drag) return;
+    a.setKnob(drag.k + ((e.clientX - drag.cx) * drag.ratio) / a.max);
+    slider.setAttribute('aria-valuenow', String(Math.round(a.knob * 100)));
+  });
+  const release = () => { const a = app(); if (!drag || !a) return; drag = null; a.release(); };
+  slot.addEventListener('pointerup', release);
+  slot.addEventListener('pointercancel', release);
   slider.addEventListener('keydown', (e) => {
-    if (done) return;
-    if (e.key === 'ArrowRight') { set(x + max() / 8); if (x >= max()) complete(); e.preventDefault(); }
-    if (e.key === 'ArrowLeft') { set(x - max() / 8); e.preventDefault(); }
-    if (e.key === 'Enter' || e.key === ' ') { complete(); e.preventDefault(); }
+    hook(); const a = app(); if (!a) return;
+    if (e.key === 'ArrowRight') { a.drag = true; a.setKnob(a.knob + 0.2); if (a.knob >= 1) a.release(); else setTimeout(() => { a.drag = false; }, 400); e.preventDefault(); }
+    if (e.key === 'Enter' || e.key === ' ') { a.setKnob(1); a.release(); e.preventDefault(); }
   });
 }
 
@@ -442,18 +454,21 @@ export function initFooter(stage, tzInfo) {
   let px = -9999, py = -9999, visible = false;
   ScrollTrigger.create({ trigger: '#contact', start: 'top bottom', end: 'bottom top', onToggle: (s) => { visible = s.isActive; } });
   window.addEventListener('pointermove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+  const cold = new Uint8Array(chars.length).fill(1);
+  let fg = '#fff', acc = '#ff7a2f', frame = 0;
   gsap.ticker.add((t, dt) => {
     if (!visible) return;
-    const cs = getComputedStyle(document.documentElement);
-    const fg = cs.getPropertyValue('--fg').trim(), acc = cs.getPropertyValue('--accent').trim();
+    if (frame++ % 20 === 0) { const cs = getComputedStyle(document.documentElement); fg = cs.getPropertyValue('--fg').trim(); acc = cs.getPropertyValue('--accent').trim(); }
     chars.forEach((c, i) => {
       const r = c.getBoundingClientRect();
       const d = Math.hypot(r.left + r.width / 2 - px, r.top + r.height / 2 - py);
       const target = clamp(1 - d / 240);
       heat[i] = target > heat[i] ? heat[i] + (target - heat[i]) * 0.35 : Math.max(target, heat[i] - dt * 0.0006);
       const h = heat[i];
-      c.style.color = h < 0.02 ? '' : h < 0.65 ? mix(fg, acc, h / 0.65) : mix(acc, '#fff3c4', (h - 0.65) / 0.35);
-      c.style.transform = h < 0.02 ? '' : `translateY(${(-h * 10).toFixed(2)}px)`;
+      if (h < 0.02) { if (!cold[i]) { c.style.color = ''; c.style.transform = ''; c.style.textShadow = ''; cold[i] = 1; } return; }
+      cold[i] = 0;
+      c.style.color = h < 0.65 ? mix(fg, acc, h / 0.65) : mix(acc, '#fff3c4', (h - 0.65) / 0.35);
+      c.style.transform = `translateY(${(-h * 10).toFixed(2)}px)`;
       c.style.textShadow = h < 0.05 ? '' : `0 0 ${Math.round(h * 36)}px ${acc}`;
     });
   });

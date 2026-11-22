@@ -32,9 +32,12 @@ export function patchForge(material, shared) {
       .replace(
         'void main() {',
         `void main() {
-          float fn = snoise(vFWorld * uNoiseScale) * 0.5 + 0.5;
-          fn = mix(fn, snoise(vFWorld * uNoiseScale * 3.1) * 0.5 + 0.5, 0.3);
-          if (fn < uDissolve) discard;
+          float fn = 1.0;
+          if (uDissolve > 0.0001) {
+            fn = snoise(vFWorld * uNoiseScale) * 0.5 + 0.5;
+            fn = mix(fn, snoise(vFWorld * uNoiseScale * 3.1) * 0.5 + 0.5, 0.3);
+            if (fn < uDissolve) discard;
+          }
           float below = uScanOn * step(vFWorld.y, uScanY);
           float slice = 0.0;
           if (below > 0.5) {
@@ -63,7 +66,7 @@ export function patchForge(material, shared) {
           if (below > 0.5) gl_FragColor.rgb = mix(gl_FragColor.rgb, uScanColor * (0.5 + slice * 0.9), 0.75);`
       );
   };
-  material.customProgramCacheKey = () => 'forge-v1';
+  material.customProgramCacheKey = () => 'forge-v2';
   material.needsUpdate = true;
 }
 
