@@ -155,7 +155,7 @@ const SHOTS = [
 ];
 
 const LAYOUT = {
-  devices: (w, h, m) => (m ? { x: 0, y: h * 0.11, s: w * 0.6 } : { x: 0, y: -h * 0.03, s: Math.min(w * 0.34, h * 0.68) }),
+  devices: (w, h, m) => (m ? { x: 0, y: h * 0.11, s: w * 0.57 } : { x: 0, y: -h * 0.03, s: Math.min(w * 0.323, h * 0.646) }),
   bust:   (w, h, m) => (m ? { x: w * 0.12, y: h * 0.22, s: h * 0.42 } : { x: w * 0.3, y: -h * 0.06, s: h * 0.8 }),
   laptop: (w, h, m) => (m ? { x: 0, y: h * 0.25, s: Math.min(w * 0.75, h * 0.34), ry: -0.25, rx: 0.2 } : { x: w * 0.25, y: -h * 0.04, s: h * 0.5, ry: -0.45, rx: 0.16 }),
   phone:  (w, h, m) => ({ x: m ? 0 : w * 0.25, y: 0, s: h * (m ? 0.5 : 0.62) }),
@@ -255,7 +255,7 @@ export class Stage {
     this.frames = 0; this.fpsT = 0; this.lowT = 0; this.screenAcc = 0;
 
     this.dustTex = toTextures(dustTarget(this.N), this.W);
-    for (const s of this.shots) { s.tex = s.proc ? toTextures(s.proc(this.N), this.W) : this.dustTex; s.ready = !!s.proc; }
+    for (const s of this.shots) { s.tex = this.dustTex; s.ready = false; }
 
     if (!this.mobile) {
       const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 });
@@ -297,18 +297,53 @@ export class Stage {
     this.mountDevices();
     this.stats.ready = Math.round(performance.now() - t0);
     this.onProgress(1, 'ready');
-    this.renderer.compile(this.scene, this.camera);
+    await this.warm(this.shots.filter((s) => s.ready));
   }
 
+  /* compile every program these shots need without blocking the page (parallel shader
+     compile), for the render target they are drawn into, and upload their textures now
+     instead of on the first frame they appear */
+  async warm(shots) {
+    const r = this.renderer;
+    const prev = shots.map((s) => s.pivot.visible);
+    shots.forEach((s) => { s.pivot.visible = true; });
+    const target = r.getRenderTarget();
+    if (this.composer) r.setRenderTarget(this.composer.renderTarget1);
+    let job = Promise.resolve();
+    try { job = r.compileAsync(this.scene, this.camera); }
+    catch (e) { console.warn(e); }
+    finally { shots.forEach((s, i) => { s.pivot.visible = prev[i]; }); r.setRenderTarget(target); }
+    await job.catch(() => {});
+    const keys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap'];
+    for (const s of shots) {
+      s.pivot.traverse((o) => {
+        const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+        ms.forEach((m) => keys.forEach((k) => { if (m[k]?.isTexture) r.initTexture(m[k]); }));
+      });
+    }
+  }
+
+  /** run heavy work one piece per idle moment, so scrolling never waits on it */
+  idle() { return new Promise((res) => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 400 }) : setTimeout(res, 16))); }
+
   async loadRest() {
+    // particle shapes for the procedural shots, one per idle moment
+    for (const s of this.shots) {
+      if (!s.proc || s.ready) continue;
+      await this.idle();
+      s.tex = toTextures(s.proc(this.N), this.W); s.ready = true;
+      this._fromTex = null; this._B = null;
+    }
+    let chain = Promise.resolve();
+    const mountLater = (fn) => (chain = chain.then(() => this.idle()).then(fn).catch((e) => console.warn(e)));
     const jobs = this.shots.filter((s) => s.file && !s.ready).map(async (s) => {
       if (s.custom) return;
-      try { const g = await this.gltf.loadAsync(BASE + s.file); this.mountModel(s, g.scene); }
+      try { const g = await this.gltf.loadAsync(BASE + s.file); await mountLater(async () => { this.mountModel(s, g.scene); await this.warm([s]); }); }
       catch (e) { console.warn('model failed', s.id, e); }
     });
     jobs.push(this.loadEarth().catch((e) => console.warn('earth failed', e)));
     jobs.push(Promise.all([this.gltf.loadAsync(BASE + IPHONE.file), this.gltf.loadAsync(BASE + MACBOOK.file)])
-      .then(([p, g]) => { this.phoneScene = p.scene; this.mountApps(g.scene); }).catch((e) => console.warn('apps devices failed', e)));
+      .then(([p, g]) => mountLater(async () => { this.phoneScene = p.scene; this.mountApps(g.scene); await this.warm([this.byId.phone]); })).catch((e) => console.warn('apps devices failed', e)));
     await Promise.all(jobs);
   }
 
@@ -579,7 +614,10 @@ export class Stage {
     gsap.to(this.rim.color, { r: acc.r, g: acc.g, b: acc.b, duration: dur });
     gsap.to(this.rim, { intensity: t.dark ? 22 : 2, duration: dur });
     gsap.to(this.scene, { environmentIntensity: t.env ?? 0.9, duration: dur });
-    if (this.bloom) gsap.to(this.bloom, { strength: t.dark ? 0.42 : t.flat ? 0 : 0.08, duration: dur });
+    if (this.bloom) {
+      this.bloom.threshold = t.flat ? 1.5 : 0.97;
+      gsap.to(this.bloom, { strength: t.dark ? 0.42 : t.flat ? 0.9 : 0.08, radius: t.flat ? 0.4 : 0.55, duration: dur, onUpdate: () => { this.bloom.enabled = !this.bloomCut && this.bloom.strength > 0.002; } });
+    }
     if (this.finalPass) gsap.to(this.finalPass.uniforms.uVig, { value: t.dark ? 0.35 : t.flat ? 0 : 0.06, duration: dur });
     if (this.finalPass) gsap.to(this.finalPass.uniforms.uCA, { value: t.flat ? 0.0012 : 0.0025, duration: dur });
     const au = this.aura.material.uniforms;
@@ -786,7 +824,7 @@ export class Stage {
       if (this.stats.fps < 45 && document.visibilityState === 'visible' && time > 6) this.lowT += 0.5; else this.lowT = 0;
       if (this.lowT >= 1.5) {
         if (this.dpr > 1.25) { this.dpr = Math.max(1.25, this.dpr - 0.25); this.renderer.setPixelRatio(this.dpr); this.resize(); }
-        else if (this.bloom && this.bloom.enabled) this.bloom.enabled = false;
+        else if (this.bloom && !this.bloomCut) { this.bloomCut = true; this.bloom.enabled = false; }
         else if (this.dpr > 1) { this.dpr = 1; this.renderer.setPixelRatio(1); this.resize(); }
         this.lowT = 0;
       }
@@ -805,6 +843,9 @@ export class Stage {
     const iu = this.ink.material.uniforms;
     this.titleMesh.material.uniforms.uOpacity.value = show;
     this.titleMesh.material.uniforms.uShift.value = (window.scrollY / window.innerHeight) * 1.1;
+    this.titleMesh.material.uniforms.uWrite.value = this.title.write;
+    this.titleMesh.material.uniforms.uTime.value = this.title.timeTexture;
+    iu.uWrite.value = this.title.write; iu.uTitleT.value = this.title.timeTexture;
     iu.uOpacity.value = show; iu.uTime.value = time;
     iu.uTitle.value = this.title.texture;
     iu.uShift.value = this.titleMesh.material.uniforms.uShift.value;
@@ -872,8 +913,12 @@ export class Stage {
     const ph = b.phone;
     if (ph.layout) {
       const slot = this.slot || (this.slot = document.querySelector('.phone-slot'));
+      if (slot && (!this.slotBox || this.slotBox.stale)) {
+        const b = slot.getBoundingClientRect();
+        this.slotBox = { left: b.left, top: b.top + window.scrollY, width: b.width, height: b.height };
+      }
       if (slot) {
-        const r = slot.getBoundingClientRect();
+        const sb = this.slotBox, r = { left: sb.left, top: sb.top - window.scrollY, width: sb.width, height: sb.height };
         if (r.width) {
           ph.pivot.position.set(((r.left + r.width / 2) / window.innerWidth - 0.5) * this.viewW, (0.5 - (r.top + r.height / 2) / window.innerHeight) * this.viewH, 0);
           ph.pivot.scale.setScalar((r.width / window.innerWidth) * this.viewW * (window.innerWidth < 600 ? 0.7 : 0.86));

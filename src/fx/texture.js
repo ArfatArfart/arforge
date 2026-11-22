@@ -52,7 +52,10 @@ export function initTextures({ reduced } = {}) {
   const io = new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target))));
   heads.forEach((h) => io.observe(h));
   let px = -9999, last = 0, raf = 0;
-  const paint = (x) => visible.forEach((h) => { h.style.setProperty('--sx', `${(x - h.getBoundingClientRect().left).toFixed(0)}px`); });
+  const paint = (x) => {
+    const hs = [...visible], lefts = hs.map((h) => h.getBoundingClientRect().left);
+    hs.forEach((h, i) => h.style.setProperty('--sx', `${(x - lefts[i]).toFixed(0)}px`));
+  };
   window.addEventListener('pointermove', (e) => {
     px = e.clientX; last = performance.now();
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(px); });

@@ -121,12 +121,12 @@ export class InkTrail {
 /* flat black ink with a wet, wobbling edge; inside it the wordmark turns white */
 export function inkMaterial(trail) {
   return new THREE.ShaderMaterial({
-    uniforms: { uInk: { value: trail.texture }, uTexel: { value: trail.texel }, uOpacity: { value: 1 }, uTime: { value: 0 }, uTitle: { value: null }, uShift: { value: 0 },
+    uniforms: { uInk: { value: trail.texture }, uTexel: { value: trail.texel }, uOpacity: { value: 1 }, uTime: { value: 0 }, uTitle: { value: null }, uTitleT: { value: null }, uWrite: { value: 0 }, uShift: { value: 0 },
       uLetter: { value: new THREE.Color('#ffffff') }, uInkCol: { value: new THREE.Color('#0b0b0c') }, uAspect: { value: 1 } },
     transparent: true, depthTest: false, depthWrite: false,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: /* glsl */ `
-      uniform sampler2D uInk, uTitle; uniform vec2 uTexel; uniform float uOpacity, uTime, uShift, uAspect; uniform vec3 uLetter, uInkCol; varying vec2 vUv;
+      uniform sampler2D uInk, uTitle, uTitleT; uniform vec2 uTexel; uniform float uOpacity, uTime, uShift, uAspect, uWrite; uniform vec3 uLetter, uInkCol; varying vec2 vUv;
       float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
@@ -139,7 +139,8 @@ export function inkMaterial(trail) {
         if (a < 0.002) discard;
         // a faint wet sheen only along the thick middle of fresh strokes
         float sheen = smoothstep(1.2, 1.8, v) * 0.05;
-        float letter = texture2D(uTitle, vec2(vUv.x, vUv.y - uShift * 0.5)).a;
+        vec2 tuv = vec2(vUv.x, vUv.y - uShift * 0.5);
+        float letter = texture2D(uTitle, tuv).a * clamp((uWrite * 1.03 - texture2D(uTitleT, tuv).r) / 0.03, 0.0, 1.0);
         vec3 col = mix(uInkCol + sheen, uLetter, letter);
         gl_FragColor = vec4(col, a * uOpacity);
       }`,

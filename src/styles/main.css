@@ -853,3 +853,15 @@ html[data-theme='ivory'], html[data-theme='paper'], html[data-theme='chalk'] { -
 /* text motion: lines rise out of masks, labels decode */
 .ln-m { will-change: transform; }
 .sec-label .lab { display: inline-block; }
+
+/* =====================================================================
+   V6 · strike cards centred on screen
+   ===================================================================== */
+@media (min-width: 901px) {
+  /* a tight heading above, so the cards sit on the middle line of the screen */
+  .process-pin { grid-template-rows: auto auto auto auto; align-content: start; padding-top: calc(var(--nav-h) + var(--s-200)); padding-bottom: var(--s-400); }
+  .process-track { padding-top: var(--s-200); padding-bottom: var(--s-400); }
+  .step { gap: var(--s-100); padding-top: var(--s-200); }
+  .step .plate { height: 48px; margin-bottom: var(--s-100); }
+  .step .ico { width: 36px; height: 36px; }
+}

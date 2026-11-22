@@ -407,8 +407,9 @@ export function initFooter(stage, tzInfo) {
   gsap.ticker.add((t, dt) => {
     if (!visible) return;
     if (frame++ % 20 === 0) { const cs = getComputedStyle(document.documentElement); fg = cs.getPropertyValue('--fg').trim(); acc = cs.getPropertyValue('--accent').trim(); }
+    const rects = chars.map((c) => c.getBoundingClientRect());
     chars.forEach((c, i) => {
-      const r = c.getBoundingClientRect();
+      const r = rects[i];
       const d = Math.hypot(r.left + r.width / 2 - px, r.top + r.height / 2 - py);
       const target = clamp(1 - d / 240);
       heat[i] = target > heat[i] ? heat[i] + (target - heat[i]) * 0.35 : Math.max(target, heat[i] - dt * 0.0006);

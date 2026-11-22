@@ -97,11 +97,13 @@ function shotAt(y) {
   return 0;
 }
 const footerEl = document.getElementById('contact');
+// page metrics are measured on refresh and resize, never inside the frame (no forced layout)
+const metrics = { max: 1, start: 0 };
+const measure = () => { metrics.max = document.documentElement.scrollHeight - innerHeight; metrics.start = footerEl.offsetTop; if (stage.slotBox) stage.slotBox.stale = true; };
+ScrollTrigger.addEventListener('refresh', measure);
 gsap.ticker.add(() => {
   if (shotMap.length) stage.sTarget = shotAt(window.scrollY);
-  const max = document.documentElement.scrollHeight - innerHeight;
-  const start = footerEl.offsetTop;
-  stage.footerT = clamp((window.scrollY - start) / Math.max(1, max - start), 0, 1);
+  stage.footerT = clamp((window.scrollY - metrics.start) / Math.max(1, metrics.max - metrics.start), 0, 1);
 });
 ScrollTrigger.addEventListener('refresh', buildShotMap);
 
@@ -112,11 +114,16 @@ window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() =
 /* ---------- build the page */
 applyTheme('molten', stage, true);
 await Promise.all([document.fonts.ready, document.fonts.load('700 120px "Geist Variable"'), document.fonts.load('400 120px Yellowtail')]).catch(() => {});
+// heavy setup runs in short pieces with breaks between them, so the intro never stutters
+const breathe = () => new Promise((r) => (globalThis.scheduler?.yield ? scheduler.yield().then(r) : setTimeout(r, 0)));
 const headings = initWords({ reduced });
+await breathe();
 initTagline(document.getElementById('tagline'), { reduced });
 initTextures({ reduced });
+await breathe();
 initGlass();
 initTextMotion({ reduced });
+await breathe();
 S.initProcess(stage, reduced);
 // themes follow whichever section crosses 55% of the screen, measured from real
 // layout (pin spacers included), so jumping anywhere always lands on the right world
@@ -142,12 +149,15 @@ initSound();
 initWhy(stage);
 S.initHero(stage);
 S.initStack(stage);
+await breathe();
 S.initMetrics(stage, T0);
 S.initTerminal(stage, tz.zone);
 S.initPhone(stage);
 S.initFaq();
+await breathe();
 S.initFooter(stage, tz);
 S.initWork();
+await breathe();
 
 // generic reveals: blocks rise 32px and fade once, on the base curve
 const revealSel = '.model-note, .slot-help, .terminal, .gauge, .chips, .brief, .footer-mid, .chapter-num';
@@ -175,8 +185,8 @@ async function boot() {
   gsap.delayedCall(reduced ? 0 : 1.5, () => stage.inkBurst?.());
   if (stage.title) {
     // the script is written at a hand's pace, not wiped
-    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.7, ease: 'sine.inOut', delay: 0.35, onUpdate: () => { stage.title.dirty = true; } });
-    gsap.to(stage.title, { write2: 1, duration: reduced ? 0.01 : 1.2, ease: 'sine.inOut', delay: reduced ? 0 : 1.95, onUpdate: () => { stage.title.dirty = true; } });
+    // the name, then "studio", written at a hand's pace (one clock, pen order baked into a texture)
+    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 3.0, ease: 'sine.inOut', delay: 0.35 });
   }
   if (STILL) document.documentElement.classList.add('still');
   heroTextIn({ reduced, delay: 1.1 });

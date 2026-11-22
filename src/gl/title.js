@@ -39,7 +39,7 @@ function thin(B, W, H) {
 
 const N8 = (W) => [-W - 1, -W, -W + 1, -1, 1, W - 1, W, W + 1];
 
-/** write-on timing for a word: a small mask canvas whose alpha follows the pen */
+/** write-on timing for a word: the time the pen reaches every pixel, 0 to 1 */
 function handwriting(text, px) {
   const pad = Math.ceil(px * 0.45);
   const c = document.createElement('canvas');
@@ -102,24 +102,10 @@ function handwriting(text, px) {
     q = q.concat(nq);
   }
   for (let i = 0; i < W * H; i++) T[i] = T[i] < 0 ? 2 : T[i] / end;
-  const mask = document.createElement('canvas'); mask.width = W; mask.height = H;
-  const mg = mask.getContext('2d');
-  return { W, H, T, pad, base, tw, px, mask, mg, md: mg.createImageData(W, H), last: -1 };
+  return { W, H, T, pad, base, tw, px };
 }
 
-function paintMask(hw, p) {
-  if (Math.abs(p - hw.last) < 1e-4) return;
-  hw.last = p;
-  const { T, md, W, H } = hw;
-  const soft = 0.02, edge = p * (1 + soft), d = md.data;
-  for (let i = 0; i < W * H; i++) {
-    const k = (edge - T[i]) / soft;
-    d[i * 4 + 3] = k >= 1 ? 255 : k <= 0 ? 0 : 255 * k;
-  }
-  hw.mg.putImageData(md, 0, 0);
-}
-
-/** a word written by hand: crisp letters at full size, revealed through the pen mask */
+/** a word written by hand: crisp letters at full size, plus its pen timing as an image */
 class Written {
   constructor(text) { this.text = text; this.hw = null; this.css = 0; }
   ensure(cssPx, dpr) {
@@ -128,7 +114,6 @@ class Written {
     if (!document.fonts.check(`400 ${low}px "Yellowtail"`)) return false;
     this.hw = handwriting(this.text, low);
     this.css = cssPx;
-    // the crisp letters, at full resolution
     const k = (cssPx * dpr) / low;
     const W = Math.ceil(this.hw.W * k), H = Math.ceil(this.hw.H * k);
     this.crisp = document.createElement('canvas'); this.crisp.width = W; this.crisp.height = H;
@@ -136,25 +121,30 @@ class Written {
     g.font = `400 ${cssPx * dpr}px "Yellowtail", cursive`;
     g.fillStyle = '#0a0a0a';
     g.fillText(this.text, this.hw.pad * k, this.hw.base * k);
-    this.out = document.createElement('canvas'); this.out.width = W; this.out.height = H;
-    this.k = k; this.last = -1;
+    this.k = k; this.span = null;
     return true;
   }
-  draw(g, x, y, p, dpr) {
-    const hw = this.hw;
-    if (p !== this.last) {
-      this.last = p;
-      paintMask(hw, p);
-      const o = this.out.getContext('2d');
-      o.globalCompositeOperation = 'copy';
-      o.drawImage(this.crisp, 0, 0);
-      o.globalCompositeOperation = 'destination-in';
-      o.imageSmoothingEnabled = true;
-      o.drawImage(hw.mask, 0, 0, this.out.width, this.out.height);
-      o.globalCompositeOperation = 'source-over';
+  /** pen time packed into red, inside [a, b] of the whole write; transparent off the glyph */
+  timing(a, b) {
+    if (this.span && this.span[0] === a && this.span[1] === b) return this.timeCanvas;
+    const { T, W, H } = this.hw;
+    const c = this.timeCanvas || (this.timeCanvas = document.createElement('canvas'));
+    c.width = W; c.height = H;
+    const g = c.getContext('2d'), img = g.createImageData(W, H), d = img.data;
+    for (let i = 0; i < W * H; i++) {
+      if (T[i] > 1.5) continue;
+      d[i * 4] = Math.round((a + (b - a) * Math.min(1, T[i])) * 255);
+      d[i * 4 + 3] = 255;
     }
-    const s = 1 / dpr;
-    g.drawImage(this.out, x - hw.pad * this.k * s, y - hw.base * this.k * s, this.out.width * s, this.out.height * s);
+    g.putImageData(img, 0, 0);
+    this.span = [a, b];
+    return c;
+  }
+  draw(g, tg, x, y, dpr, a, b) {
+    const hw = this.hw, s = 1 / dpr, X = x - hw.pad * this.k * s, Y = y - hw.base * this.k * s;
+    const w = this.crisp.width * s, h = this.crisp.height * s;
+    g.drawImage(this.crisp, X, Y, w, h);
+    tg.drawImage(this.timing(a, b), X, Y, w, h);
   }
 }
 
@@ -165,7 +155,12 @@ export class HeroTitle {
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.minFilter = THREE.LinearFilter;
     this.texture.generateMipmaps = false;
-    this.write = 0; this.write2 = 0; this.rise = 0; this.dirty = true;
+    this.timeCanvas = document.createElement('canvas');
+    this.tg = this.timeCanvas.getContext('2d');
+    this.timeTexture = new THREE.CanvasTexture(this.timeCanvas);
+    this.timeTexture.minFilter = THREE.LinearFilter;
+    this.timeTexture.generateMipmaps = false;
+    this.write = 0; this.dirty = true;
     this.name = new Written('Arfat');
     this.studio = new Written('studio');
     this.resize();
@@ -174,41 +169,59 @@ export class HeroTitle {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.w = window.innerWidth; this.h = window.innerHeight; this.dpr = dpr;
     this.canvas.width = Math.round(this.w * dpr); this.canvas.height = Math.round(this.h * dpr);
+    // the timing is smooth, so it lives at CSS resolution
+    this.timeCanvas.width = this.w; this.timeCanvas.height = this.h;
     this.dirty = true;
   }
+  /** drawn once per size; the writing itself is a uniform on the GPU */
   draw() {
     if (!this.dirty) return;
     this.dirty = false;
-    const { g, w, h, dpr } = this;
+    const { g, tg, w, h, dpr } = this;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
+    tg.setTransform(1, 0, 0, 1, 0, 0);
+    tg.fillStyle = '#ff0000'; tg.fillRect(0, 0, w, h);
     const mobile = w < 760;
     // the name in script, as large as the screen allows; "studio" follows, smaller, after it
     g.font = '400 100px "Yellowtail", cursive';
     const per = g.measureText('Arfat').width / 100, perS = g.measureText('studio').width / 100;
     const size = Math.min((w * (mobile ? 0.86 : 0.6)) / per, mobile ? w * 0.42 : h * 0.5);
     const ss = size * 0.42;
-    if (!this.name.ensure(size, dpr) || !this.studio.ensure(ss, dpr)) { this.dirty = true; this.texture.needsUpdate = true; return; }
+    if (!this.name.ensure(size, dpr) || !this.studio.ensure(ss, dpr)) { this.dirty = true; return; }
     const nw = per * size, sw = perS * ss;
     const total = mobile ? nw : nw + sw * 0.55;
     const x0 = (w - total) / 2;
     const y0 = mobile ? h * 0.36 : h * 0.6;
-    this.name.draw(g, x0, y0, this.write, dpr);
-    g.save();
-    if (mobile) g.translate(x0 + nw - sw * 0.95, y0 + ss * 1.05);
-    else g.translate(x0 + nw - sw * 0.45, y0 + ss * 0.62);
-    g.rotate(-0.07);
-    this.studio.draw(g, 0, 0, this.write2, dpr);
-    g.restore();
+    this.name.draw(g, tg, x0, y0, dpr, 0, 0.6);
+    for (const c of [g, tg]) {
+      c.save();
+      if (mobile) c.translate(x0 + nw - sw * 0.95, y0 + ss * 1.05);
+      else c.translate(x0 + nw - sw * 0.45, y0 + ss * 0.62);
+      c.rotate(-0.07);
+    }
+    // studio's crisp letters and timing go through the same transform
+    const st = this.studio, hw = st.hw, X = -hw.pad * st.k / dpr, Y = -hw.base * st.k / dpr;
+    const sW = st.crisp.width / dpr, sH = st.crisp.height / dpr;
+    g.drawImage(st.crisp, X, Y, sW, sH);
+    tg.drawImage(st.timing(0.62, 1.0), X, Y, sW, sH);
+    g.restore(); tg.restore();
     this.texture.needsUpdate = true;
+    this.timeTexture.needsUpdate = true;
   }
 }
 
 export function titleMaterial(texture) {
   return new THREE.ShaderMaterial({
-    uniforms: { uTex: { value: texture }, uOpacity: { value: 1 }, uShift: { value: 0 } },
+    uniforms: { uTex: { value: texture }, uTime: { value: null }, uWrite: { value: 0 }, uOpacity: { value: 1 }, uShift: { value: 0 } },
     transparent: true, depthTest: false, depthWrite: false,
     vertexShader: 'uniform float uShift; varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.x, position.y + uShift, 0.0, 1.0); }',
-    fragmentShader: 'uniform sampler2D uTex; uniform float uOpacity; varying vec2 vUv; void main(){ float a = texture2D(uTex, vUv).a; gl_FragColor = vec4(vec3(0.0035), a * uOpacity); }',
+    fragmentShader: /* glsl */ `
+      uniform sampler2D uTex, uTime; uniform float uOpacity, uWrite; varying vec2 vUv;
+      void main(){
+        // the pen has reached a pixel once the write clock passes its time
+        float pen = clamp((uWrite * 1.03 - texture2D(uTime, vUv).r) / 0.03, 0.0, 1.0);
+        gl_FragColor = vec4(vec3(0.0035), texture2D(uTex, vUv).a * pen * uOpacity);
+      }`,
   });
 }

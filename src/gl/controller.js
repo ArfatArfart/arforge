@@ -96,8 +96,8 @@ export function padPatch(u) {
 export function makePad(src, { envMap, fx } = {}) {
   const root = src.clone(true);
   const CLEAR = /^(btn_cross|btn_circle|btn_square|btn_triangle|btn_ps)$/;
-  const RED = new THREE.Color(3.0, 0.1, 0.12), YELLOW = new THREE.Color(2.6, 2.15, 0.2);
-  const SYMBOL = { btn_triangle: RED, btn_circle: RED, btn_square: RED, btn_cross: YELLOW };
+  const RED = new THREE.Color(9, 0.4, 0.45), BLUE = new THREE.Color(0.6, 1.6, 12);
+  const SYMBOL = { btn_triangle: RED, btn_circle: RED, btn_cross: BLUE, btn_square: BLUE };
   root.traverse((o) => {
     if (!o.isMesh) return;
     const src0 = o.material;
@@ -137,7 +137,7 @@ export function makePad(src, { envMap, fx } = {}) {
           .replace('#include <common>', '#include <common>\nuniform vec3 uSym;')
           .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uSym * (1.0 - smoothstep(0.25, 0.5, dot(diffuseColor.rgb, vec3(0.3333))));');
       };
-      p.userData.patchKey = name === 'btn_cross' ? 'pad-sym-y' : 'pad-sym-r';
+      p.userData.patchKey = sym === BLUE ? 'pad-sym-b' : 'pad-sym-r';
     }
     o.material = p;
   });
@@ -198,19 +198,22 @@ export function addPadLights(holder) {
     const NB = 22;
     for (const sign of [-1, 1]) {
       const edge = [];
-      for (let k = 0; k <= NB; k++) {
+      for (let k = 3; k <= NB; k++) {
         const lo = t1 - ((t1 - t0) * k) / NB, hi = lo + (t1 - t0) / NB;
         let best = null;
         for (const q of pts) if (q.t <= hi && q.t >= lo - 1e-6 && (!best || q.p.x * sign > best.p.x * sign)) best = q;
-        if (best && best.p.x * sign > 0.2) edge.push(best.p.clone().add(new THREE.Vector3(sign * 0.018, 0, 0)).addScaledVector(view, -0.012));
+        if (best && best.p.x * sign > 0.2) edge.push(best.p.clone().add(new THREE.Vector3(sign * 0.008, 0, 0)).addScaledVector(view, 0.006));
       }
       if (edge.length < 4) continue;
       const curve = new THREE.CatmullRomCurve3(edge, false, 'centripetal');
-      const core = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.014, 8, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) }));
-      const halo = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.05, 8, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }));
-      halo.renderOrder = 3;
-      tp.add(core, halo);
-      u.bars.push(core.material, halo.material);
+      const core = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.012, 8, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) }));
+      tp.add(core);
+      u.bars.push(core.material);
+      // a real light source in the gap, so the glow lands on the touchpad edge and the shell beside it
+      const lamp = new THREE.PointLight('#ff2a2a', 0, 0.5, 2);
+      lamp.position.copy(curve.getPoint(0.55)).addScaledVector(view, 0.06);
+      tp.add(lamp);
+      (u.lamps || (u.lamps = [])).push(lamp);
     }
   }
   // player LED row, found by casting down onto the shell just below the touchpad
@@ -239,7 +242,6 @@ export function addPadLights(holder) {
     u.muteMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 0.75, 0.1), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     mm.forEach((m) => { const g = new THREE.Mesh(m.geometry, u.muteMat); g.renderOrder = 3; m.add(g); });
   }
-  return lu;
 }
 
 /** sticks lean toward the cursor, a click presses cross, squeezes the triggers and lights the mute LED */
@@ -254,7 +256,8 @@ export function animatePad(pad, px, py, press, dt, time = 0, on = 1) {
   u.triggers.forEach((t) => { t.o.rotation.x = t.rx + u.press * 0.32; });
   // the light bar breathes slowly, the way the real one idles
   const k = on * (0.85 + 0.15 * Math.sin(time * 1.6));
-  if (u.bars) u.bars.forEach((m) => m.color.setRGB(3.4 * k, 0.12 * k, 0.16 * k));
+  if (u.bars) u.bars.forEach((m) => m.color.setRGB(9 * k, 0.35 * k, 0.45 * k));
+  if (u.lamps) u.lamps.forEach((l) => { l.intensity = 0.006 * k; });
   if (u.leds) u.leds.forEach((l) => { l.material.opacity = on; });
   if (u.muteMat) u.muteMat.opacity = on * u.press;
 }
