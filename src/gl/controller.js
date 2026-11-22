@@ -52,6 +52,15 @@ export function padPatch(u) {
         roughnessFactor = mix(0.3, 0.44, smoothstep(0.08, 0.6, dot(diffuseColor.rgb, vec3(0.3333))));`
       )
       .replace(
+        '#include <aomap_fragment>',
+        `#include <aomap_fragment>
+        {
+          float dk = 1.0 - smoothstep(0.06, 0.32, dot(diffuseColor.rgb, vec3(0.3333)));
+          reflectedLight.indirectSpecular *= mix(1.0, 0.3, dk);
+          reflectedLight.directSpecular *= mix(1.0, 0.55, dk);
+        }`
+      )
+      .replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         #ifndef USE_TRANSMISSION
@@ -87,6 +96,8 @@ export function padPatch(u) {
 export function makePad(src, { envMap, fx } = {}) {
   const root = src.clone(true);
   const CLEAR = /^(btn_cross|btn_circle|btn_square|btn_triangle|btn_ps)$/;
+  const RED = new THREE.Color(3.0, 0.1, 0.12), YELLOW = new THREE.Color(2.6, 2.15, 0.2);
+  const SYMBOL = { btn_triangle: RED, btn_circle: RED, btn_square: RED, btn_cross: YELLOW };
   root.traverse((o) => {
     if (!o.isMesh) return;
     const src0 = o.material;
@@ -115,6 +126,19 @@ export function makePad(src, { envMap, fx } = {}) {
     }
     p.name = src0.name;
     if (fx) { p.userData.extraPatch = padPatch(fx); p.userData.patchKey = CLEAR.test(name) ? 'pad-clear' : 'pad'; }
+    // the printed symbols on the face buttons light up: red, and the cross in the studio yellow
+    const sym = SYMBOL[name];
+    if (sym && src0.name === 'dualsense_mat1') {
+      const base = p.userData.extraPatch;
+      p.userData.extraPatch = (shader) => {
+        if (base) base(shader);
+        shader.uniforms.uSym = { value: sym };
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', '#include <common>\nuniform vec3 uSym;')
+          .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += uSym * (1.0 - smoothstep(0.25, 0.5, dot(diffuseColor.rgb, vec3(0.3333))));');
+      };
+      p.userData.patchKey = name === 'btn_cross' ? 'pad-sym-y' : 'pad-sym-r';
+    }
     o.material = p;
   });
   // the sticks are only caps in the model; give each a pivot deep inside the shell so it tilts like a real stick
@@ -140,7 +164,7 @@ export function makePad(src, { envMap, fx } = {}) {
   root.scale.multiplyScalar(k);
   const tilt = new THREE.Group(); tilt.rotation.x = Math.PI / 2 - 0.5; tilt.add(root);
   const holder = new THREE.Group(); holder.add(tilt);
-  holder.userData = { sticks, buttons, triggers, press: 0, root, ripple: 1 };
+  holder.userData = { sticks, buttons, triggers, press: 0, root };
   return holder;
 }
 
@@ -149,49 +173,45 @@ export function makePad(src, { envMap, fx } = {}) {
   down each side of the touchpad, five player LEDs in a row beneath it with
   the middle one lit, and the mute LED, orange while the button is held.
 */
-const LIGHT_VS = /* glsl */ `
-  uniform mat4 uToPad; varying vec3 vPad;
-  void main(){ vPad = (uToPad * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-// drawn on the shell: light wherever the shell is within a hair of the touchpad's edge
-const SEAM_FS = /* glsl */ `
-  uniform float uT, uOn, uW; uniform vec3 uRed, uBox, uMid;
-  varying vec3 vPad;
-  void main(){
-    vec3 p = vPad - uMid;
-    vec3 q = abs(p) - uBox;
-    float sd = length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
-    float band = 1.0 - smoothstep(0.0, uW, abs(sd));
-    float ax = abs(p.x) / uBox.x, az = p.z / uBox.z;
-    // down both sides and round the lower corners; never along the top edge
-    float sides = smoothstep(0.5, 0.72, ax) * smoothstep(-0.85, -0.6, az);
-    float e = band * sides * (0.82 + 0.18 * sin(uT * 1.6)) * 5.0 * uOn;
-    if (e < 0.004) discard;
-    gl_FragColor = vec4(uRed * e, 1.0);
-  }`;
-
 /** add the lights; call after the shot has been sampled into particles */
 export function addPadLights(holder) {
   const u = holder.userData, root = u.root;
   holder.updateMatrixWorld(true);
-  const lu = { uT: { value: 0 }, uRipple: { value: 1 }, uOn: { value: 0 }, uRed: { value: new THREE.Color(3.2, 0.12, 0.16) } };
+  u.bars = [];
   const tp = root.getObjectByName('touchpad');
   if (tp) {
-    tp.geometry.computeBoundingBox();
-    const bb = tp.geometry.boundingBox;
-    const box = bb.getSize(new THREE.Vector3()).multiplyScalar(0.5), mid = bb.getCenter(new THREE.Vector3());
-    const inv = tp.matrixWorld.clone().invert();
-    const shell = [];
-    root.getObjectByName('body')?.traverse((m) => { if (m.isMesh) shell.push(m); });
-    shell.forEach((m) => {
-      const mat = new THREE.ShaderMaterial({
-        uniforms: { ...lu, uToPad: { value: inv.clone().multiply(m.matrixWorld) }, uBox: { value: box }, uMid: { value: mid }, uW: { value: 0.016 } },
-        vertexShader: LIGHT_VS, fragmentShader: SEAM_FS, transparent: true, depthWrite: false,
-        blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
-      });
-      const glow = new THREE.Mesh(m.geometry, mat);
-      glow.renderOrder = 3; glow.frustumCulled = false;
-      m.add(glow);
-    });
+    // The light bar on the real controller is one thin line per side, in the gap between the
+    // touchpad and the shell: it follows the touchpad's curved side from the top edge down and
+    // bends inward at the bottom corner. Trace that outline from the vertices the camera sees.
+    const P = tp.geometry.attributes.position, N = tp.geometry.attributes.normal;
+    const view = new THREE.Vector3(0, 0.877, 0.479);   // toward the camera, in model space
+    const up = new THREE.Vector3(0, 0.479, -0.877);    // screen up, in model space
+    const pts = [];
+    const v = new THREE.Vector3(), n = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) {
+      n.fromBufferAttribute(N, i);
+      if (n.dot(view) < 0.35) continue;
+      v.fromBufferAttribute(P, i);
+      pts.push({ p: v.clone(), t: v.dot(up) });
+    }
+    const t0 = Math.min(...pts.map((q) => q.t)), t1 = Math.max(...pts.map((q) => q.t));
+    const NB = 22;
+    for (const sign of [-1, 1]) {
+      const edge = [];
+      for (let k = 0; k <= NB; k++) {
+        const lo = t1 - ((t1 - t0) * k) / NB, hi = lo + (t1 - t0) / NB;
+        let best = null;
+        for (const q of pts) if (q.t <= hi && q.t >= lo - 1e-6 && (!best || q.p.x * sign > best.p.x * sign)) best = q;
+        if (best && best.p.x * sign > 0.2) edge.push(best.p.clone().add(new THREE.Vector3(sign * 0.018, 0, 0)).addScaledVector(view, -0.012));
+      }
+      if (edge.length < 4) continue;
+      const curve = new THREE.CatmullRomCurve3(edge, false, 'centripetal');
+      const core = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.014, 8, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) }));
+      const halo = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.05, 8, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }));
+      halo.renderOrder = 3;
+      tp.add(core, halo);
+      u.bars.push(core.material, halo.material);
+    }
   }
   // player LED row, found by casting down onto the shell just below the touchpad
   const body = [];
@@ -219,7 +239,6 @@ export function addPadLights(holder) {
     u.muteMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 0.75, 0.1), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     mm.forEach((m) => { const g = new THREE.Mesh(m.geometry, u.muteMat); g.renderOrder = 3; m.add(g); });
   }
-  u.lights = lu;
   return lu;
 }
 
@@ -230,13 +249,12 @@ export function animatePad(pad, px, py, press, dt, time = 0, on = 1) {
     s.rotation.x += ((-py * 0.32) - s.rotation.x) * Math.min(1, dt * 10);
     s.rotation.z += ((-px * 0.32) - s.rotation.z) * Math.min(1, dt * 10);
   }
-  if (press > 0.5 && !u.held) u.ripple = 0;
-  u.held = press > 0.5;
-  u.ripple = Math.min(1, u.ripple + dt / 0.9);
   u.press += (press - u.press) * Math.min(1, dt * 18);
   u.buttons.forEach((b, i) => { b.o.position.y = b.y - (i === 0 ? u.press * 7 : 0); });
   u.triggers.forEach((t) => { t.o.rotation.x = t.rx + u.press * 0.32; });
-  if (u.lights) { u.lights.uT.value = time; u.lights.uRipple.value = u.ripple; u.lights.uOn.value = on; }
+  // the light bar breathes slowly, the way the real one idles
+  const k = on * (0.85 + 0.15 * Math.sin(time * 1.6));
+  if (u.bars) u.bars.forEach((m) => m.color.setRGB(3.4 * k, 0.12 * k, 0.16 * k));
   if (u.leds) u.leds.forEach((l) => { l.material.opacity = on; });
   if (u.muteMat) u.muteMat.opacity = on * u.press;
 }

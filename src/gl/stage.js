@@ -155,7 +155,7 @@ const SHOTS = [
 ];
 
 const LAYOUT = {
-  devices: (w, h, m) => (m ? { x: 0, y: h * 0.11, s: w * 0.7 } : { x: 0, y: -h * 0.03, s: Math.min(w * 0.4, h * 0.8) }),
+  devices: (w, h, m) => (m ? { x: 0, y: h * 0.11, s: w * 0.6 } : { x: 0, y: -h * 0.03, s: Math.min(w * 0.34, h * 0.68) }),
   bust:   (w, h, m) => (m ? { x: w * 0.12, y: h * 0.22, s: h * 0.42 } : { x: w * 0.3, y: -h * 0.06, s: h * 0.8 }),
   laptop: (w, h, m) => (m ? { x: 0, y: h * 0.25, s: Math.min(w * 0.75, h * 0.34), ry: -0.25, rx: 0.2 } : { x: w * 0.25, y: -h * 0.04, s: h * 0.5, ry: -0.45, rx: 0.16 }),
   phone:  (w, h, m) => ({ x: m ? 0 : w * 0.25, y: 0, s: h * (m ? 0.5 : 0.62) }),

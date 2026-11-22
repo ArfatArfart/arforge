@@ -174,9 +174,9 @@ async function boot() {
   gsap.to(stage, { lights: 1, duration: reduced ? 0.01 : 2.0, delay: reduced ? 0 : 0.6, ease: 'power1.inOut' });
   gsap.delayedCall(reduced ? 0 : 1.5, () => stage.inkBurst?.());
   if (stage.title) {
-    gsap.to(stage.title, { rise: 1, duration: reduced ? 0.01 : 1.4, ease: 'none', delay: 0.15, onUpdate: () => { stage.title.dirty = true; } });
     // the script is written at a hand's pace, not wiped
-    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.9, ease: 'sine.inOut', delay: 1.05, onUpdate: () => { stage.title.dirty = true; } });
+    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.7, ease: 'sine.inOut', delay: 0.35, onUpdate: () => { stage.title.dirty = true; } });
+    gsap.to(stage.title, { write2: 1, duration: reduced ? 0.01 : 1.2, ease: 'sine.inOut', delay: reduced ? 0 : 1.95, onUpdate: () => { stage.title.dirty = true; } });
   }
   if (STILL) document.documentElement.classList.add('still');
   heroTextIn({ reduced, delay: 1.1 });
