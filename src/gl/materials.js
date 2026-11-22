@@ -67,7 +67,7 @@ export function patchForge(material, shared) {
       );
     if (material.userData.extraPatch) material.userData.extraPatch(shader);
   };
-  material.customProgramCacheKey = () => (material.userData.extraPatch ? 'forge-v2-screen' : 'forge-v2');
+  material.customProgramCacheKey = () => (material.userData.extraPatch ? 'forge-v2-' + (material.userData.patchKey || 'screen') : 'forge-v2');
   material.needsUpdate = true;
 }
 

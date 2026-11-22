@@ -48,7 +48,7 @@ if (lenis) {
 
 /* ---------- the stage (with a graceful fallback when WebGL is missing) */
 const loaderFile = document.getElementById('loader-file');
-const intro = new Intro(document.getElementById('loader'), '#F5E23A');
+const intro = new Intro(document.getElementById('loader'), '#FDEA2C');
 const onProgress = (p, file) => {
   intro.progress(p);
   if (file && file !== 'ready') loaderFile.textContent = `Loading ${file}, ${Math.round(p * 100)} percent`;
@@ -168,14 +168,15 @@ async function boot() {
   await intro.play();
   const loader = document.getElementById('loader');
   stage.introAt = performance.now();
-  // the orange flood hands over to the live hero, which is the same orange
+  // the yellow flood hands over to the live hero, which is the same yellow
   gsap.to(loader, { opacity: 0, duration: 0.45, ease: 'power2.out', onComplete: () => loader.remove() });
   gsap.to(stage, { intro: 1, duration: reduced ? 0.01 : 2.2, ease: 'power2.inOut' });
   gsap.to(stage, { lights: 1, duration: reduced ? 0.01 : 2.0, delay: reduced ? 0 : 0.6, ease: 'power1.inOut' });
-  gsap.delayedCall(reduced ? 0 : 1.2, () => stage.inkBurst?.());
+  gsap.delayedCall(reduced ? 0 : 1.5, () => stage.inkBurst?.());
   if (stage.title) {
     gsap.to(stage.title, { rise: 1, duration: reduced ? 0.01 : 1.4, ease: 'none', delay: 0.15, onUpdate: () => { stage.title.dirty = true; } });
-    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.1, ease: 'power1.inOut', delay: 1.0, onUpdate: () => { stage.title.dirty = true; } });
+    // the script is written at a hand's pace, not wiped
+    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.9, ease: 'sine.inOut', delay: 1.05, onUpdate: () => { stage.title.dirty = true; } });
   }
   if (STILL) document.documentElement.classList.add('still');
   heroTextIn({ reduced, delay: 1.1 });

@@ -15,7 +15,8 @@ import { patchForge, forgeUniforms, earthMaterial, cloudMaterial, atmosphereMate
 import { sampleModel, dustTarget, sheetTarget, sphereTarget, ringsTarget, earthTarget, toTextures } from './targets.js';
 import { LaptopScreen } from './screen.js';
 import { makeIPhone, makeMacBook, SafariScreen, MacScreen, Pacer, screenUniforms, IPHONE, MACBOOK } from './phone.js';
-import { Fluid, inkMaterial } from './fluid.js';
+import { InkTrail, inkMaterial } from './ink.js';
+import { makePad, padUniforms, animatePad, addPadLights, PAD } from './controller.js';
 import { HeroTitle, titleMaterial } from './title.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -25,7 +26,30 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const damp = (a, b, k, dt) => lerp(a, b, 1 - Math.exp(-k * dt));
 const easeIO = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-const SIZE = { [IPHONE.file]: 1150484, 'hdri/studio_small_09_1k.hdr': 1615248 };
+const SIZE = { [PAD.file]: PAD.bytes, 'hdri/studio_small_09_1k.hdr': 1615248 };
+
+/* Flat sections (the yellow hero) use a tone curve that leaves every colour
+   below the knee untouched and only rolls off highlights, hue kept. Neutral
+   tone mapping cannot reach a yellow this saturated: it pushes it to cream.
+   untone() feeds flat colours through the inverse so they land exactly. */
+const KNEE = 0.86, KR = (1 - KNEE).toFixed(3), KS = KNEE.toFixed(3);
+THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+  'vec3 CustomToneMapping( vec3 color ) { return color; }',
+  `vec3 CustomToneMapping( vec3 color ) {
+    color *= toneMappingExposure;
+    float peak = max( color.r, max( color.g, color.b ) );
+    if ( peak <= ${KS} ) return color;
+    float np = ${KS} + ${KR} * ( 1.0 - exp( -( peak - ${KS} ) / ${KR} ) );
+    return color * ( np / peak );
+  }`
+);
+export function untone(c) {
+  const peak = Math.max(...c);
+  if (peak <= KNEE) return [...c];
+  const tp = Math.min(peak, 0.996);
+  const p = KNEE - (1 - KNEE) * Math.log(1 - (tp - KNEE) / (1 - KNEE));
+  return c.map((v) => (v * p) / peak);
+}
 export const SITES = [
   { name: 'forge-gym-demo', host: 'arfatarfart.github.io', src: 'work/scroll/forge-gym-demo.webp' },
   { name: 'medinest-pharmacy-demo', host: 'arfatarfart.github.io', src: 'work/scroll/medinest-pharmacy-demo.webp' },
@@ -131,7 +155,7 @@ const SHOTS = [
 ];
 
 const LAYOUT = {
-  devices: (w, h, m) => (m ? { x: 0, y: h * 0.06, s: h * 0.3 } : { x: 0, y: -h * 0.02, s: h * 0.55 }),
+  devices: (w, h, m) => (m ? { x: 0, y: h * 0.11, s: w * 0.7 } : { x: 0, y: -h * 0.03, s: Math.min(w * 0.4, h * 0.8) }),
   bust:   (w, h, m) => (m ? { x: w * 0.12, y: h * 0.22, s: h * 0.42 } : { x: w * 0.3, y: -h * 0.06, s: h * 0.8 }),
   laptop: (w, h, m) => (m ? { x: 0, y: h * 0.25, s: Math.min(w * 0.75, h * 0.34), ry: -0.25, rx: 0.2 } : { x: w * 0.25, y: -h * 0.04, s: h * 0.5, ry: -0.45, rx: 0.16 }),
   phone:  (w, h, m) => ({ x: m ? 0 : w * 0.25, y: 0, s: h * (m ? 0.5 : 0.62) }),
@@ -182,14 +206,18 @@ export class Stage {
       rim: new THREE.RectAreaLight('#dbe7ff', 0, 1.0, 5.2),
       rim2: new THREE.RectAreaLight('#ffe2c8', 0, 1.0, 5.2),
       sweep: new THREE.RectAreaLight('#ffffff', 0, 0.35, 6),
+      bounce: new THREE.RectAreaLight('#ffe23a', 0, 4.5, 1.6),
+      glint: new THREE.RectAreaLight('#ffffff', 0, 0.5, 0.5),
     };
+    this.area.bounce.position.set(0, -2.6, 2.2);
+    this.area.glint.position.set(2.4, 2.8, 2.6);
     this.area.key.position.set(-3.6, 2.4, 3.8);
     this.area.rim.position.set(4.2, 0.6, -2.6);
     this.area.rim2.position.set(-4.2, 0.4, -2.6);
     this.area.sweep.position.set(-5, 0.6, 3.2);
     Object.values(this.area).forEach((l) => { l.lookAt(0, 0, 0); this.scene.add(l); });
 
-    // layers drawn before the 3D scene: aura light, hero wordmark, fluid ink
+    // layers drawn before the 3D scene: aura light, hero wordmark, ink trail
     this.bg = new THREE.Scene();
     this.bgCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.aura = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), auraMaterial());
@@ -197,11 +225,14 @@ export class Stage {
     this.title = new HeroTitle();
     this.titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), titleMaterial(this.title.texture));
     this.titleMesh.frustumCulled = false; this.titleMesh.renderOrder = 1;
-    this.fluid = new Fluid(r, { sim: this.mobile ? 96 : 128, dye: this.mobile ? 512 : 1024 });
-    this.ink = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), inkMaterial(this.fluid));
+    this.inkTrail = new InkTrail(r, { res: this.mobile ? 640 : 1024 });
+    this.ink = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), inkMaterial(this.inkTrail));
     this.ink.frustumCulled = false; this.ink.renderOrder = 2;
     this.bg.add(this.aura, this.titleMesh, this.ink);
-    this.inkT = 0; this.lastPhone = null; this.lastPtr = null;
+    this.lastPtr = null; this.inkR = 0; this.glitch = 0; this.press = 0; this.swoosh = null;
+    window.addEventListener('pointerdown', () => { this.press = 1; });
+    window.addEventListener('pointerup', () => { this.press = 0; });
+    window.addEventListener('pointercancel', () => { this.press = 0; });
 
     this.N = this.mobile ? 256 * 48 : 256 * 96;
     this.W = 256;
@@ -250,8 +281,8 @@ export class Stage {
     const bump = (n, file) => { got += n; this.onProgress(Math.min(0.99, got / total), file); };
     MeshoptDecoder.ready && (await MeshoptDecoder.ready);
     this.gltf = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-    const [phoneBuf, hdrBuf] = await Promise.all([
-      fetchBytes(IPHONE.file, (n) => bump(n, 'iphone_15_pro_max.glb')),
+    const [padBuf, hdrBuf] = await Promise.all([
+      fetchBytes(PAD.file, (n) => bump(n, 'dualsense.glb')),
       fetchBytes('hdri/studio_small_09_1k.hdr', (n) => bump(n, 'studio_small_09_1k.hdr')),
     ]);
     const hdrURL = URL.createObjectURL(new Blob([hdrBuf]));
@@ -262,7 +293,7 @@ export class Stage {
     this.scene.environment = pmrem.fromEquirectangular(hdr).texture;
     this.scene.environmentIntensity = 0.9;
     hdr.dispose(); pmrem.dispose();
-    this.phoneScene = (await this.gltf.parseAsync(phoneBuf, BASE + 'models/')).scene;
+    this.padScene = (await this.gltf.parseAsync(padBuf, BASE + 'models/')).scene;
     this.mountDevices();
     this.stats.ready = Math.round(performance.now() - t0);
     this.onProgress(1, 'ready');
@@ -276,7 +307,8 @@ export class Stage {
       catch (e) { console.warn('model failed', s.id, e); }
     });
     jobs.push(this.loadEarth().catch((e) => console.warn('earth failed', e)));
-    jobs.push(this.gltf.loadAsync(BASE + MACBOOK.file).then((g) => this.mountApps(g.scene)).catch((e) => console.warn('macbook failed', e)));
+    jobs.push(Promise.all([this.gltf.loadAsync(BASE + IPHONE.file), this.gltf.loadAsync(BASE + MACBOOK.file)])
+      .then(([p, g]) => { this.phoneScene = p.scene; this.mountApps(g.scene); }).catch((e) => console.warn('apps devices failed', e)));
     await Promise.all(jobs);
   }
 
@@ -297,19 +329,17 @@ export class Stage {
     this._fromTex = null; this._B = null;
   }
 
-  /* Hero: one real iPhone, centre stage, floating in ink */
+  /* Hero: a real DualSense, centre stage, over the yellow */
   mountDevices() {
     const shot = this.byId.devices;
-    this.safari = new SafariScreen(SITES.map((x) => ({ ...x, src: BASE + x.src })));
-    this.heroFx = screenUniforms();
-    this.heroFx.uInkGain.value = 1;
-    this.heroFx.uAspectInv.value = 1 / 0.463;
-    const front = makeIPhone(this.phoneScene, { screenTexture: this.safari.texture, finish: 'black', envMap: this.studioEnv, fx: this.heroFx });
-    shot.spin.add(front);
-    shot.front = front;
+    this.padFx = padUniforms();
+    const pad = makePad(this.padScene, { envMap: this.studioEnv, fx: this.padFx });
+    shot.spin.add(pad);
+    shot.front = pad;
     const u = forgeUniforms(); u.uNoiseScale.value = 4.5;
     this.prepShot(shot, u);
     this.finishShot(shot, 1.25);
+    addPadLights(pad);
   }
 
   /* Apps: a MacBook and a smaller iPhone in front, running the same site in sync */
@@ -511,7 +541,7 @@ export class Stage {
     this.viewW = this.viewH * this.camera.aspect;
     this.aura.material.uniforms.uAspect.value = w / h;
     if (this.title) this.title.resize();
-    if (this.fluid) { this.fluid.resize(w / h); this.ink.material.uniforms.uTexel.value = this.fluid.dyeTexel; }
+    if (this.inkTrail) { this.inkTrail.resize(w / h); this.ink.material.uniforms.uTexel.value = this.inkTrail.texel; this.ink.material.uniforms.uInk.value = this.inkTrail.texture; this.ink.material.uniforms.uAspect.value = w / h; }
     this.field.uniforms.uPR.value = this.dpr;
     this.field.uniforms.uSize.value = (this.mobile ? 20 : 24) * (h / 900);
     this.sparks.uniforms.uPR.value = this.dpr;
@@ -537,6 +567,8 @@ export class Stage {
     const fu = this.field.uniforms;
     const bg = new THREE.Color(); this.renderer.getClearColor(bg);
     const target = new THREE.Color(t.bg), acc = new THREE.Color(t.accent);
+    if (this.composer) this.renderer.toneMapping = t.flat ? THREE.CustomToneMapping : THREE.NeutralToneMapping;
+    if (this.composer && t.flat) { const c = untone([target.r, target.g, target.b]); target.setRGB(c[0], c[1], c[2]); }
     const srgb = (hex) => { const c = new THREE.Color(hex); const o = {}; c.getRGB(o, THREE.SRGBColorSpace); return new THREE.Vector3(o.r, o.g, o.b); };
     const accSRGB = srgb(t.accent), inkS = srgb(t.fg);
     gsap.to(bg, { r: target.r, g: target.g, b: target.b, duration: dur, ease: 'power2.out', onUpdate: () => this.renderer.setClearColor(bg) });
@@ -547,8 +579,9 @@ export class Stage {
     gsap.to(this.rim.color, { r: acc.r, g: acc.g, b: acc.b, duration: dur });
     gsap.to(this.rim, { intensity: t.dark ? 22 : 2, duration: dur });
     gsap.to(this.scene, { environmentIntensity: t.env ?? 0.9, duration: dur });
-    if (this.bloom) gsap.to(this.bloom, { strength: t.dark ? 0.42 : 0.08, duration: dur });
-    if (this.finalPass) gsap.to(this.finalPass.uniforms.uVig, { value: t.dark ? 0.35 : 0.06, duration: dur });
+    if (this.bloom) gsap.to(this.bloom, { strength: t.dark ? 0.42 : t.flat ? 0 : 0.08, duration: dur });
+    if (this.finalPass) gsap.to(this.finalPass.uniforms.uVig, { value: t.dark ? 0.35 : t.flat ? 0 : 0.06, duration: dur });
+    if (this.finalPass) gsap.to(this.finalPass.uniforms.uCA, { value: t.flat ? 0.0012 : 0.0025, duration: dur });
     const au = this.aura.material.uniforms;
     const pal = (t.aura || [t.accent, t.accent, t.fg]).map((h) => new THREE.Color(h));
     const k = t.aura ? 1 : 0.08;
@@ -675,7 +708,7 @@ export class Stage {
     const studio = Math.max(dv.vis || 0, ph.vis || 0);
     const L = this.lights;
     this.sweepT += dt;
-    const sp = (this.sweepT % 7.5) / 2.6;
+    const sp = (this.sweepT % 5.5) / 2.2;
     const sweepOn = sp < 1 ? Math.sin(Math.PI * sp) : 0;
     const tgt = (dv.vis || 0) >= (ph.vis || 0) ? dv.pivot.position : ph.pivot.position;
     this.area.sweep.position.set(tgt.x + lerp(-3.8, 3.8, easeIO(clamp(sp))), tgt.y + 0.8, 3.2);
@@ -684,13 +717,16 @@ export class Stage {
     this.area.rim.intensity = 7 * studio * smooth(0.2, 0.6, L);
     this.area.rim2.intensity = 5 * studio * smooth(0.35, 0.75, L);
     this.area.sweep.intensity = 24 * studio * sweepOn * smooth(0.8, 1, L);
-    if (this.safari && L > 0.45) this.safari.boot = Math.min(1.01, this.safari.boot + dt / 1.4);
+    const hero = dv.vis || 0;
+    this.area.bounce.intensity = 3.2 * hero * smooth(0.2, 0.7, L);
+    this.area.glint.intensity = 55 * hero * smooth(0.5, 1, L);
+    this.area.key.intensity += 3 * hero * smooth(0.0, 0.35, L);
+    this.area.bounce.lookAt(dv.pivot.position); this.area.glint.lookAt(dv.pivot.position);
     if (this.sky) { const ev = this.byId.earth.vis || 0; this.sky.material.opacity = ev * 0.85; this.sky.visible = ev > 0.01; this.sky.rotation.y = time * 0.004; }
 
     this.screenAcc += dt;
     if (this.screenAcc > 1 / 30) {
       const sdt = this.screenAcc; this.screenAcc = 0;
-      if (this.safari && dv.pivot.visible) this.safari.draw(sdt);
       if (this.pacer && ph.pivot.visible) { this.pacer.update(sdt); this.macScreen.draw(sdt); this.appSafari.draw(sdt); }
       if (this.screen && this.byId.laptop.pivot.visible) { this.screen.draw(sdt); this.screenTex.needsUpdate = true; }
     }
@@ -714,12 +750,18 @@ export class Stage {
     }
     this.updateInk(dt, time, dv);
     const db = this.renderer.getDrawingBufferSize(new THREE.Vector2());
-    for (const [fx, scr] of [[this.heroFx, this.safari], [this.appFx, this.appSafari]]) {
+    for (const [fx, scr] of [[this.appFx, this.appSafari]]) {
       if (!fx || !scr) continue;
       fx.uPrev.value = scr.prevTexture; fx.uSweep.value = scr.sweep; fx.uSweepOn.value = scr.sweepOn;
       fx.uScreenTime.value = time; fx.uRes.value.copy(db);
     }
-    if (this.heroFx) { this.heroFx.uInk.value = this.fluid.texture; this.heroFx.uInkGain.value = this.ink.visible ? 1 : 0; }
+    if (this.padFx) {
+      const f = this.padFx;
+      f.uInk.value = this.inkTrail.texture; f.uInkGain.value = this.ink.visible ? 1 : 0;
+      f.uRes.value.copy(db); f.uCell.value = Math.max(6, Math.round(db.x * 0.0085));
+      f.uPadT.value = time; f.uGlitch.value = this.glitch;
+      f.uPix.value = 1 - smooth(0.5, 1.0, this.intro);
+    }
 
     this.shake *= Math.pow(0.0008, dt);
     const sx = (Math.random() - 0.5) * 0.05 * this.shake, sy = (Math.random() - 0.5) * 0.05 * this.shake;
@@ -752,66 +794,69 @@ export class Stage {
   }
 
   /*
-    Ink. It only runs while the hero is on screen. The cursor drags ink with
-    its real velocity; the phone sheds slow swirling ink around its outline,
-    so the liquid looks pushed by the object rather than painted on.
+    Ink. It only runs while the hero is on screen. The cursor lays a ribbon a
+    little wider than itself, wider when it moves fast; fast flicks throw
+    droplets and tear the controller into glitch slices.
   */
   updateInk(dt, time, dv) {
     const vis = dv.vis || 0;
     const show = vis * clamp(1 - (window.scrollY / window.innerHeight) * 0.9);
     this.titleMesh.visible = this.ink.visible = show > 0.005;
+    const iu = this.ink.material.uniforms;
     this.titleMesh.material.uniforms.uOpacity.value = show;
     this.titleMesh.material.uniforms.uShift.value = (window.scrollY / window.innerHeight) * 1.1;
-    this.ink.material.uniforms.uOpacity.value = show;
-    this.ink.material.uniforms.uTitle.value = this.title.texture;
-    this.ink.material.uniforms.uShift.value = this.titleMesh.material.uniforms.uShift.value;
-    if (!this.titleMesh.visible) return;
+    iu.uOpacity.value = show; iu.uTime.value = time;
+    iu.uTitle.value = this.title.texture;
+    iu.uShift.value = this.titleMesh.material.uniforms.uShift.value;
+    if (!this.letterSet) { this.letterSet = true; if (this.composer) { const w = untone([0.995, 0.995, 0.995]); iu.uLetter.value.setRGB(w[0], w[1], w[2]); } }
+    if (!this.titleMesh.visible) { this.lastPtr = null; this.glitch = 0; return; }
     this.title.draw();
-    const f = this.fluid;
-    // cursor
+    const T = this.inkTrail;
+    const asp = window.innerWidth / window.innerHeight;
+    const m = this.mobile ? 0.8 : 1;
     const ptr = { x: (this.pointer.x + 1) / 2, y: (this.pointer.y + 1) / 2 };
+    let speed = 0;
     if (this.pointerActive && this.lastPtr) {
-      const vx = (ptr.x - this.lastPtr.x) / Math.max(dt, 1e-3), vy = (ptr.y - this.lastPtr.y) / Math.max(dt, 1e-3);
-      if (Math.abs(vx) + Math.abs(vy) > 0.02) f.splat(ptr.x, ptr.y, vx * 1100, vy * 1100, 0.5, this.mobile ? 0.0014 : 0.0026);
+      const dx = (ptr.x - this.lastPtr.x) * asp, dy = ptr.y - this.lastPtr.y;
+      const dist = Math.hypot(dx, dy);
+      speed = dist / Math.max(dt, 1e-3);
+      if (dist > 0.0004 && dist < 0.3) {
+        const r1 = (0.022 + Math.min(0.05, speed * 0.011)) * m;
+        T.stroke(this.lastPtr.x, this.lastPtr.y, ptr.x, ptr.y, this.inkR || r1, r1);
+        this.inkR = r1;
+        if (speed > 2.2 && Math.random() < 0.4) {
+          const nx = -dy / dist, ny = dx / dist, side = Math.random() < 0.5 ? -1 : 1, off = r1 * (1.5 + Math.random() * 1.8);
+          const qx = ptr.x + (nx * off * side) / asp, qy = ptr.y + ny * off * side, rr = r1 * (0.18 + Math.random() * 0.26);
+          T.stroke(qx, qy, qx, qy, rr, rr, 1.7);
+        }
+      }
     }
+    if (speed < 0.05) this.inkR = 0;
     this.lastPtr = ptr;
-    // the phone: centre motion plus a slow orbit of ink around its silhouette
-    if (dv.front && dv.pivot.visible) {
-      const c = new THREE.Vector3(); dv.front.getWorldPosition(c);
-      const q = c.clone().project(this.camera);
-      const pc = { x: q.x * 0.5 + 0.5, y: q.y * 0.5 + 0.5 };
-      const hgt = (dv.pivot.scale.x / this.viewH) * 0.5, wid = hgt * 0.5 * (this.viewH / this.viewW);
-      if (this.lastPhone) {
-        const vx = (pc.x - this.lastPhone.x) / Math.max(dt, 1e-3), vy = (pc.y - this.lastPhone.y) / Math.max(dt, 1e-3);
-        if (Math.abs(vx) + Math.abs(vy) > 0.01) f.splat(pc.x, pc.y, vx * 700, vy * 700, 0.05, 0.004);
+    this.glitch = damp(this.glitch, clamp((speed - 1.6) / 3.5), speed > 1.6 ? 16 : 3, dt);
+    // after the intro, one scripted stroke under the controller shows what the ink does
+    if (this.swoosh) {
+      const sw = this.swoosh; sw.t += dt;
+      const k = Math.min(1, sw.t / 1.35);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      // through the letters on both sides, dipping under the controller in the middle
+      const x = 0.1 + 0.8 * e, u = (x - 0.5) / 0.4;
+      const y = (this.mobile ? 0.55 : 0.3) + (this.mobile ? 0.08 : 0.22) * u * u + 0.03 * Math.sin(e * Math.PI * 6);
+      if (sw.last) {
+        const sp = Math.hypot((x - sw.last.x) * asp, y - sw.last.y) / Math.max(dt, 1e-3);
+        const r1 = (0.03 + Math.min(0.03, sp * 0.008)) * m;
+        T.stroke(sw.last.x, sw.last.y, x, y, sw.r || r1, r1);
+        sw.r = r1;
       }
-      this.lastPhone = pc;
-      this.inkT += dt;
-      while (this.inkT > 0.085) {
-        this.inkT -= 0.085;
-        const a = time * 1.7 + Math.random() * 6.28;
-        const ex = pc.x + Math.cos(a) * wid * 1.25, ey = pc.y + Math.sin(a) * hgt * 1.02;
-        const sp = 260 + Math.random() * 220;
-        const mob = this.mobile ? 0.4 : 1;
-        f.splat(ex, ey, -Math.sin(a) * sp + Math.cos(a) * 60, Math.cos(a) * sp + Math.sin(a) * 60, 0.11 * mob * smooth(0.35, 0.9, this.lights), this.mobile ? 0.0009 : 0.0016);
-      }
+      sw.last = { x, y };
+      if (k >= 1) this.swoosh = null;
     }
-    f.step(Math.min(dt, 1 / 30));
-    this.ink.material.uniforms.uDye.value = f.texture;
+    T.step(Math.min(dt, 1 / 30), time);
+    iu.uInk.value = T.texture;
   }
 
-  /** a burst of ink when the phone first appears */
-  inkBurst() {
-    const dv = this.byId.devices;
-    if (!dv.front) return;
-    const c = new THREE.Vector3(); dv.front.getWorldPosition(c);
-    const q = c.project(this.camera);
-    const x = q.x * 0.5 + 0.5, y = q.y * 0.5 + 0.5;
-    for (let i = 0; i < 14; i++) {
-      const a = (i / 14) * Math.PI * 2;
-      this.fluid.splat(x + Math.cos(a) * 0.03, y + Math.sin(a) * 0.05, Math.cos(a) * 1600, Math.sin(a) * 1600, this.mobile ? 0.35 : 0.7, this.mobile ? 0.0015 : 0.003);
-    }
-  }
+  /** after the intro, a single stroke of ink sweeps under the controller */
+  inkBurst() { this.swoosh = { t: 0, last: null, r: 0 }; }
 
   animateShots(time, dt) {
     const px = this.ptr.x, py = this.ptr.y;
@@ -820,8 +865,9 @@ export class Stage {
     const dv = b.devices;
     if (dv.layout && dv.front) {
       const L = dv.layout;
-      dv.pivot.position.set(L.x, L.y + Math.sin(time * 0.9) * 0.035, 0);
-      dv.spin.rotation.set(0.06 - py * 0.16 + Math.sin(time * 0.6) * 0.03, px * 0.42 + Math.sin(time * 0.3) * 0.3, Math.sin(time * 0.5) * 0.05 - px * 0.04);
+      dv.pivot.position.set(L.x, L.y + Math.sin(time * 0.9) * 0.03, 0);
+      dv.spin.rotation.set(-py * 0.3 + Math.sin(time * 0.6) * 0.05, px * 0.55 + Math.sin(time * 0.3) * 0.14, Math.sin(time * 0.5) * 0.035 - px * 0.1);
+      animatePad(dv.front, this.pointer.x, this.pointer.y, this.press, dt, time, (dv.vis || 0) * smooth(0.3, 0.9, this.lights));
     }
     const ph = b.phone;
     if (ph.layout) {

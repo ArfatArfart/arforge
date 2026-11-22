@@ -12,7 +12,8 @@ of text moves for a reason, and every number on the page is measured live.
 |---|---|---|
 | Marble bust, classic laptop, circuit board, cross pein hammer (2K) | [Poly Haven](https://polyhaven.com/models) photogrammetry scans | CC0 |
 | Studio lighting (`studio_small_09`) | Poly Haven HDRI | CC0 |
-| iPhone 15 Pro Max (hero and Apps phones) | [polyman on Sketchfab](https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7), logo hidden, materials and screen replaced | CC BY 4.0 |
+| iPhone 15 Pro Max (Apps phone) | [polyman on Sketchfab](https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7), logo hidden, materials and screen replaced | CC BY 4.0 |
+| PlayStation 5 DualSense (hero) | [AHarmlessPotato on Sketchfab](https://sketchfab.com/3d-models/playstation-5-dualsense-878c1f882808477ab81c2fe86d5a3936), logos removed, materials and lights replaced | CC BY 4.0 |
 | MacBook Pro (Apps) | [pmndrs/examples](https://github.com/pmndrs/examples), floating laptop demo, screen replaced | MIT |
 | Earth day, night lights, clouds, normals, star map | NASA Blue Marble and Black Marble (via the three-globe package) | Public domain |
 | Technology logos | [Simple Icons](https://simpleicons.org) | CC0 |
@@ -22,13 +23,17 @@ of text moves for a reason, and every number on the page is measured live.
 
 ## The ideas
 
-- **A fluid hero.** A yellow stage, the ARFAT wordmark with a hand written "studio", and a real
-  iPhone in the centre running Arfat's live sites. Your cursor stirs a GPU stable fluids solver
-  (curl, vorticity, pressure). Where the ink flows it reveals a second edition of the scene:
-  the letters turn white inside it, and the website on the phone switches, cell by cell, to a
-  night colour scheme. The phone body never changes, only its screen.
-- **Screen VFX.** Sites on the phone change with a pixel sweep: the screen is cut into cells and
-  each one flips from the old page to the new one behind a hot scan line.
+- **An ink hero.** A yellow stage, the ARFAT wordmark and a "studio" written by hand (the
+  script is thinned to its centre line and revealed in pen order). A real DualSense floats in
+  the centre: its sticks lean toward your cursor, a click presses the cross button, squeezes the
+  triggers and lights the mute LED, and a red light bar glows along both touchpad seams. Your
+  cursor leaves a ribbon of black ink a little wider than itself. Under the ink is a second
+  edition of the hero: white letters, and a controller made of bright pixels. Fast moves tear it
+  into glitch slices.
+- **A dotted intro.** One yellow dot, a gooey X, then a diamond grid of dots with cyan and magenta
+  rims that swell along a diagonal wave, melt into ribbons and flood the screen yellow.
+- **Exact colour.** Flat sections use a tone curve that only rolls off highlights, and their
+  colours are fed through its inverse, so the yellow on screen is the yellow in the CSS.
 - **One site, two screens.** In Apps a MacBook and a smaller iPhone in front of it run the same
   site and scroll together off one shared clock, so you see the page reflow from laptop to phone.
 - **Six strikes.** In Process the real 3D hammer flies to each milestone and strikes its plate.
