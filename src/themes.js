@@ -11,7 +11,8 @@ import gsap from 'gsap';
   void      space around the planet
 */
 export const THEMES = {
-  obsidian:   { bg: '#000000', fg: '#F2EFE9', muted: '#8C8880', accent: '#FF5A1F', accentInk: '#000000', line: 'rgba(242,239,233,0.14)', surface: 'rgba(255,255,255,0.05)', gradA: '#FFFFFF', gradB: '#9B9B9B', dark: true, embers: 0.75, env: 0.9, particles: 1 },
+  molten:     { bg: '#FF5C1B', fg: '#0A0A0A', muted: '#3A1A0C', accent: '#0A0A0A', accentInk: '#FF5C1B', line: 'rgba(10,10,10,0.2)', surface: 'rgba(10,10,10,0.06)', gradA: '#0A0A0A', gradB: '#3A1A0C', dark: false, env: 1.0, particles: 0.9 },
+  obsidian:   { aura: ['#10264f', '#2e2216', '#1c1233'], bg: '#000000', fg: '#F5F5F7', muted: '#86868B', accent: '#FF5A1F', accentInk: '#000000', line: 'rgba(242,239,233,0.14)', surface: 'rgba(255,255,255,0.05)', gradA: '#FFFFFF', gradB: '#9B9B9B', dark: true, embers: 0.75, env: 0.9, particles: 1 },
   ivory:      { bg: '#EDEAE3', fg: '#131209', muted: '#6E6A62', accent: '#E8461A', accentInk: '#FFFFFF', line: 'rgba(19,18,9,0.14)', surface: 'rgba(19,18,9,0.04)', gradA: '#000000', gradB: '#666666', dark: false, embers: 0, env: 1.1, particles: 0.55 },
   blueprint:  { bg: '#0A1A33', fg: '#E6EEFF', muted: '#8FA3C7', accent: '#5CC8FF', accentInk: '#04101F', line: 'rgba(92,200,255,0.16)', surface: 'rgba(92,200,255,0.06)', gradA: '#FFFFFF', gradB: '#8FA3C7', dark: true, embers: 0.12, env: 1.0, particles: 1 },
   acid:       { bg: '#0E0F0B', fg: '#F4F7EC', muted: '#9EA393', accent: '#C6FF3D', accentInk: '#0E0F0B', line: 'rgba(198,255,61,0.16)', surface: 'rgba(198,255,61,0.05)', gradA: '#FFFFFF', gradB: '#9EA393', dark: true, embers: 0.1, env: 1.1, particles: 1 },

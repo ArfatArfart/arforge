@@ -14,7 +14,8 @@ theme, every headline word moves the way it means, and every number on the page 
 | Type materials: titanium, black marble, blue steel, molten metal, brass, graphite and more | [Poly Haven](https://polyhaven.com/textures) photo textures, re-graded per theme | CC0 |
 | Phone screens | Mobile captures of Arfat's live GitHub Pages projects | Own work |
 | Studio lighting (`studio_small_09`) | Poly Haven HDRI | CC0 |
-| Earth day, night lights, clouds, specular | NASA imagery via the three.js examples | Public domain |
+| iPhone 15 Pro Max (hero and Apps phones) | [polyman on Sketchfab](https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7), logo hidden, materials and screen replaced | CC BY 4.0 |
+| Earth day, night lights, clouds, star map | NASA Blue Marble and Black Marble (via the three-globe package), NASA cloud map | Public domain |
 | Technology logos | [Simple Icons](https://simpleicons.org) | CC0 |
 | Work screenshots | Headless captures of Arfat's live GitHub Pages projects | Own work |
 | Work data, repo counts, terminal requests | GitHub REST API, called live from the browser | n/a |

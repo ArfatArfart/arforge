@@ -84,63 +84,88 @@ export function forgeUniforms(extra = {}) {
   };
 }
 
-/* ---------------------------------------------------------------- Earth */
+/* ---------------------------------------------------------------- Earth
+   NASA Blue Marble day map, Black Marble night lights, a normal map for
+   relief, an ocean mask for sun glint, and shadows from the separate cloud
+   layer. Lighting runs in Earth space from the real subsolar point.        */
 export function earthMaterial(tex, shared) {
   return new THREE.ShaderMaterial({
     uniforms: {
-      uDay: { value: tex.day }, uNight: { value: tex.night }, uSpec: { value: tex.spec },
+      uDay: { value: tex.day }, uNight: { value: tex.night }, uWater: { value: tex.water },
       uClouds: { value: tex.clouds }, uNormal: { value: tex.normal },
-      uSun: { value: new THREE.Vector3(1, 0, 0) },
+      uSun: { value: new THREE.Vector3(1, 0, 0) }, uCloudShift: { value: 0 },
       ...shared,
     },
     vertexShader: /* glsl */ `
-      varying vec2 vUv;
-      varying vec3 vLocalN;
-      varying vec3 vWorldN;
-      varying vec3 vW;
+      varying vec2 vUv; varying vec3 vLocalN; varying vec3 vWorldN; varying vec3 vW; varying vec3 vVl;
       void main() {
-        vUv = uv;
-        vLocalN = normalize(position);
+        vUv = uv; vLocalN = normalize(position);
         vWorldN = normalize(mat3(modelMatrix) * normal);
-        vec4 w = modelMatrix * vec4(position, 1.0);
-        vW = w.xyz;
+        vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz;
+        vVl = transpose(mat3(modelMatrix)) * (cameraPosition - w.xyz);
         gl_Position = projectionMatrix * viewMatrix * w;
-      }
-    `,
+      }`,
     fragmentShader: /* glsl */ `
-      uniform sampler2D uDay, uNight, uSpec, uClouds;
-      uniform vec3 uSun;
-      uniform float uDissolve, uTime, uNoiseScale;
+      uniform sampler2D uDay, uNight, uWater, uClouds, uNormal;
+      uniform vec3 uSun; uniform float uDissolve, uTime, uNoiseScale, uCloudShift;
       uniform vec3 uEdge;
-      varying vec2 vUv;
-      varying vec3 vLocalN;
-      varying vec3 vWorldN;
-      varying vec3 vW;
+      varying vec2 vUv; varying vec3 vLocalN; varying vec3 vWorldN; varying vec3 vW; varying vec3 vVl;
       ${NOISE}
       void main() {
-        float fn = snoise(vW * uNoiseScale) * 0.5 + 0.5;
-        if (fn < uDissolve) discard;
-        float l = dot(normalize(vLocalN), normalize(uSun));
-        float day = smoothstep(-0.12, 0.22, l);
+        float fn = 1.0;
+        if (uDissolve > 0.0001) { fn = snoise(vW * uNoiseScale) * 0.5 + 0.5; if (fn < uDissolve) discard; }
+        vec3 N = normalize(vLocalN);
+        vec3 T = normalize(cross(vec3(0.0, 1.0, 0.0), N) + vec3(1e-5, 0.0, 0.0));
+        vec3 B = cross(N, T);
+        vec3 nm = texture2D(uNormal, vUv).xyz * 2.0 - 1.0;
+        vec3 Nr = normalize(T * nm.x * 0.8 + B * nm.y * 0.8 + N * nm.z);
+        vec3 S = normalize(uSun);
+        float l = dot(N, S), lr = dot(Nr, S);
+        float day = smoothstep(-0.14, 0.24, l);
         vec3 dayC = texture2D(uDay, vUv).rgb;
         vec3 nightC = texture2D(uNight, vUv).rgb;
-        float cl = texture2D(uClouds, vUv + vec2(uTime * 0.0015, 0.0)).r;
-        vec3 col = mix(nightC * vec3(1.0, 0.72, 0.42) * 2.6, dayC * (0.15 + max(l, 0.0) * 1.25), day);
-        col = mix(col, vec3(0.95) * (0.08 + max(l, 0.0)), cl * 0.8 * day);
-        col += nightC * vec3(1.0, 0.6, 0.3) * 0.15 * (1.0 - day);
+        float water = texture2D(uWater, vUv).r;
+        vec2 cuv = vUv + vec2(uCloudShift, 0.0);
+        float cloudShadow = texture2D(uClouds, cuv + vec2(0.0015, 0.001)).r;
+        vec3 lit = dayC * (0.06 + max(lr, 0.0) * 1.35) * (1.0 - cloudShadow * 0.45 * day);
+        float dusk = smoothstep(0.25, -0.05, l) * smoothstep(-0.35, 0.0, l);
+        vec3 lights = nightC * vec3(1.0, 0.74, 0.46) * (2.4 + dusk * 1.5);
+        vec3 col = mix(lights * (1.0 - cloudShadow * 0.6), lit, day);
         vec3 V = normalize(cameraPosition - vW);
-        float spec = pow(max(dot(reflect(-normalize(uSun), normalize(vLocalN)), normalize(vLocalN)), 0.0), 1.0);
-        float ocean = texture2D(uSpec, vUv).r;
-        col += vec3(1.0, 0.85, 0.6) * pow(max(l, 0.0), 12.0) * ocean * 0.35;
-        float fres = pow(1.0 - max(dot(normalize(vWorldN), V), 0.0), 3.0);
-        col += vec3(0.32, 0.6, 1.0) * fres * (0.25 + day * 0.9);
+        vec3 Nw = normalize(vWorldN);
+        vec3 Hl = normalize(S + normalize(vVl));
+        float glint = pow(max(dot(Nr, Hl), 0.0), 260.0) * 0.9 + pow(max(dot(N, Hl), 0.0), 30.0) * 0.06;
+        col += vec3(1.0, 0.9, 0.74) * water * day * glint;
+        col += vec3(1.0, 0.45, 0.2) * dusk * 0.08 * (1.0 - water);
+        float fres = pow(1.0 - max(dot(Nw, V), 0.0), 3.0);
+        col += vec3(0.3, 0.58, 1.0) * fres * (0.18 + day * 0.85);
         float edge = (1.0 - smoothstep(0.0, 0.07, fn - uDissolve)) * step(0.0001, uDissolve);
         col += uEdge * edge * 5.0;
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
-      }
-    `,
+      }`,
+  });
+}
+
+export function cloudMaterial(tex, shared) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uClouds: { value: tex.clouds }, uSun: { value: new THREE.Vector3(1, 0, 0) }, uCloudShift: { value: 0 }, uOpacity: shared.uAtmo },
+    transparent: true, depthWrite: false,
+    vertexShader: `varying vec2 vUv; varying vec3 vN; void main(){ vUv = uv; vN = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D uClouds; uniform vec3 uSun; uniform float uCloudShift, uOpacity;
+      varying vec2 vUv; varying vec3 vN;
+      void main(){
+        float d = texture2D(uClouds, vUv + vec2(uCloudShift, 0.0)).r;
+        float l = dot(normalize(vN), normalize(uSun));
+        float day = smoothstep(-0.18, 0.3, l);
+        vec3 c = mix(vec3(0.04, 0.05, 0.08), vec3(1.0) * (0.3 + max(l, 0.0) * 0.95), day);
+        c = mix(c, vec3(1.0, 0.62, 0.38), smoothstep(0.2, 0.0, abs(l - 0.02)) * 0.5);
+        gl_FragColor = vec4(c, d * 0.92 * uOpacity);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
   });
 }
 

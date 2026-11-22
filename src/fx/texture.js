@@ -7,7 +7,6 @@
   while they animate. A specular band follows the cursor across the type,
   the way a light reflects off engraved metal.
 */
-const BASE = import.meta.env.BASE_URL;
 const SKIP = '.loadbar,.slash,.sketch-line,.mark-bg,.rec-dot,.ruler,.ruler-val,.swipe-pill,.type-caret,svg,br';
 
 function leaves(h) {
@@ -30,12 +29,13 @@ export function initTextures({ reduced } = {}) {
   const heads = [...document.querySelectorAll('[data-tex]')];
   const map = new Map();
   heads.forEach((h) => {
-    h.style.setProperty('--tex', `url("${BASE}textures/type/${h.dataset.tex}.webp")`);
     h.classList.add('textured');
     map.set(h, leaves(h));
   });
   const measure = () => map.forEach((ls, h) => {
     const hr = h.getBoundingClientRect();
+    h.style.setProperty('--hw', `${hr.width.toFixed(0)}px`);
+    h.style.setProperty('--hh', `${hr.height.toFixed(0)}px`);
     ls.forEach((l) => {
       l.classList.add('tx');
       const r = l.getBoundingClientRect();
@@ -57,14 +57,5 @@ export function initTextures({ reduced } = {}) {
     px = e.clientX; last = performance.now();
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; paint(px); });
   }, { passive: true });
-  if (reduced) return { measure };
-  const idle = () => {
-    if (performance.now() - last > 2500) {
-      const t = (performance.now() % 5200) / 2600;
-      paint(t < 1 ? -400 + t * (window.innerWidth + 800) : -9999);
-    }
-    requestAnimationFrame(idle);
-  };
-  requestAnimationFrame(idle);
   return { measure };
 }

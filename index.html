@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" data-theme="obsidian">
+<html lang="en" data-theme="molten">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ARFORGE · Software foundry by Arfat</title>
   <meta name="description" content="ARFORGE is Arfat's software studio. Websites, mobile apps and backend systems, taken from first sketch to production by one team." />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#FF5C1B" />
   <meta name="color-scheme" content="dark light" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -21,7 +21,7 @@
   <meta name="twitter:title" content="ARFORGE · Software foundry by Arfat" />
   <meta name="twitter:description" content="Raw ideas in. Shipped software out." />
   <meta name="twitter:image" content="https://arfatarfart.github.io/arforge/og.jpg" />
-  <link rel="preload" href="/models/digital_wrist_watch.glb" as="fetch" crossorigin />
+  <link rel="preload" href="/models/iphone_15_pro_max.glb" as="fetch" crossorigin />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -38,16 +38,8 @@
   <a class="skip" href="#main">Skip to content</a>
 
   <!-- ============ PRELOADER: counts real bytes of the 3D scans ============ -->
-  <div id="loader" aria-live="polite" data-why="The counter is driven by real downloaded bytes of the 3D scans, so the number never lies.">
-    <div class="loader-inner">
-      <svg class="loader-mark" viewBox="0 0 32 32" aria-hidden="true"><path class="la" d="M6 27 L16 5 L26 27"/><path class="lb" d="M10.5 19 H25"/><circle class="spark" cx="27.5" cy="19" r="1.6"/></svg>
-      <p class="loader-label caption-3">Heating the forge</p>
-      <p class="loader-count"><span id="loader-num">000</span><span class="pct">%</span></p>
-      <div class="loader-bar"><span id="loader-fill"></span></div>
-      <p class="loader-file caption-5" id="loader-file">Connecting</p>
-    </div>
-    <div class="loader-half top"></div>
-    <div class="loader-half bottom"></div>
+  <div id="loader" aria-live="polite" data-why="The waiting spark draws a ring of real downloaded bytes. Then a spark becomes a pattern and the pattern melts into metal, the colour of the hero underneath.">
+    <p class="sr-only" id="loader-file">Loading</p>
   </div>
 
   <!-- ============ STAGE: one WebGL canvas behind the whole page ============ -->
@@ -113,58 +105,24 @@
 
   <main id="main">
 
-    <!-- ===================================================== 00 HERO · a product studio you scroll through -->
-    <section id="hero" class="hero" data-theme="obsidian" data-shot="devices" aria-labelledby="hero-title">
-      <div class="hero-sticky">
-        <div class="hero-copy" id="hero-copy">
-          <p class="eyebrow caption-1 reveal-up glass">
-            <span class="live-dot" aria-hidden="true"></span>
-            Software foundry by Arfat · Taking on new builds
-          </p>
-          <h1 id="hero-title" class="display-1 hero-title" data-tex="titanium">
-            <span class="line">
-              <span class="w" data-fx="rough">Raw</span>
-              <span class="w" data-fx="focus">ideas</span>
-              <span class="w" data-fx="enter">in.</span>
-            </span>
-            <span class="line">
-              <span class="w" data-fx="flap">Shipped</span>
-              <span class="w" data-fx="decode">software</span>
-              <span class="w" data-fx="launch">out.</span>
-            </span>
-          </h1>
-          <p class="hero-sub body-3 reveal-up">ARFORGE is Arfat&rsquo;s studio for web, mobile and backend engineering. One team takes your product from first sketch to production, then keeps it fast.</p>
-          <div class="hero-actions reveal-up">
-            <a class="btn btn-primary btn-lg magnetic" href="#contact" data-cursor="Let's talk" data-why="Buttons lean toward the cursor because the next step should meet you halfway.">
-              <span class="button-md">Start a project</span>
-              <svg class="ico ico-arrow" viewBox="0 0 24 24" aria-hidden="true"><path class="shaft" d="M4 12h14"/><path class="head" d="M13 6l6 6-6 6"/></svg>
-            </a>
-            <a class="link-under button-md" href="#work" data-cursor="Scroll">See the work</a>
-          </div>
-          <p class="hero-proof caption-2 reveal-up" id="hero-proof">
-            <svg class="ico ico-gh" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.4-.6-1.6 0-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 5.9.5.4.9 1.1.9 2.2v3.3c0 .3.1.7.8.6A12 12 0 0 0 12 .3"/></svg>
-            <span><b data-count="13" id="proof-repos">13</b> public repositories, <b data-count="9" id="proof-live">9</b> deployed live on GitHub</span>
-          </p>
-        </div>
-
-        <div class="hero-chapter" id="hero-chapter">
-          <p class="caption-3 mono hero-chapter-k"><span class="live-dot" aria-hidden="true"></span> Rendered live in your browser</p>
-          <p class="display-2 hero-chapter-t" data-tex="platinum"><span class="pw">Every</span> <span class="pw">pixel</span> <span class="pw">engineered.</span><br><span class="pw">Every</span> <span class="pw">edge</span> <span class="pw">considered.</span></p>
-          <p class="body-3 hero-chapter-b">This phone is modelled, lit and shaded in code to real flagship proportions. Its screen runs Arfat&rsquo;s real projects. The watch is a photogrammetry scan. Nothing on this page is a video.</p>
-        </div>
-
-        <div class="callouts" id="callouts" aria-hidden="true">
-          <div class="callout" data-anchor="screen"><i class="c-dot"></i><i class="c-line"></i><span class="c-txt caption-4"><b class="mono">Display</b> Live projects, flicking like apps</span></div>
-          <div class="callout" data-anchor="watch"><i class="c-dot"></i><i class="c-line"></i><span class="c-txt caption-4"><b class="mono">Watch</b> Photogrammetry scan · Poly Haven</span></div>
-          <div class="callout" data-anchor="frame"><i class="c-dot"></i><i class="c-line"></i><span class="c-txt caption-4"><b class="mono">Frame</b> Brushed titanium · anisotropic shader</span></div>
-          <div class="callout" data-anchor="lens"><i class="c-dot"></i><i class="c-line"></i><span class="c-txt caption-4"><b class="mono">Optics</b> Sapphire lenses · iridescent coating</span></div>
-        </div>
-
-        <div class="hero-turn" aria-hidden="true" data-why="The bar fills as you scroll, because the phone turns exactly as far as you have scrolled. You are the turntable.">
-          <span class="caption-5 mono">Scroll to turn</span>
-          <span class="turn-bar"><i id="turn-fill"></i></span>
+    <!-- ===================================================== 00 HERO · molten, liquid, one object -->
+    <section id="hero" class="hero" data-theme="molten" data-shot="devices" aria-labelledby="hero-title">
+      <h1 id="hero-title" class="sr-only">ARFORGE studio. Websites, apps and backends, forged by Arfat.</h1>
+      <div class="hero-ui">
+        <p class="hero-line title-1 reveal-up">Websites, apps and backends.<br />Forged by Arfat.</p>
+        <div class="hero-actions reveal-up">
+          <a class="btn btn-primary btn-lg magnetic" href="#contact" data-cursor="Let's talk" data-why="Buttons lean toward the cursor because the next step should meet you halfway.">
+            <span class="button-md">Start a project</span>
+            <svg class="ico ico-arrow" viewBox="0 0 24 24" aria-hidden="true"><path class="shaft" d="M4 12h14"/><path class="head" d="M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="link-under button-md" href="#work" data-cursor="Scroll">See the work</a>
         </div>
       </div>
+      <p class="hero-hint caption-4 mono reveal-up" data-why="The ink is a real fluid simulation solved on your GPU every frame. The phone and your cursor push it, so it behaves like liquid, not like an animation."><span class="live-dot" aria-hidden="true"></span> Live fluid · move your cursor</p>
+      <p class="hero-proof caption-4 mono reveal-up" id="hero-proof"><b id="proof-repos">13</b> repos · <b id="proof-live">9</b> live</p>
+      <a class="hero-down" href="#manifesto" aria-label="Scroll to the next section" data-cursor="Scroll">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"/></svg>
+      </a>
     </section>
 
     <!-- ===================================================== 01 MANIFESTO (tagline reveal) -->
@@ -452,6 +410,8 @@
       </div>
     </div>
 
+    <div class="iss-label" id="iss-label" aria-hidden="true"><b class="mono">ISS · live</b><span class="iss-data caption-5">Contacting the station</span></div>
+
     <div class="footer-mid">
       <nav class="foot-col" aria-label="Footer">
         <p class="caption-3 mono">Index</p>
@@ -469,7 +429,7 @@
       </div>
       <div class="foot-col credits">
         <p class="caption-3 mono">Real assets</p>
-        <p class="caption-5">3D scans by Poly Haven (CC0). Earth imagery from NASA via three.js. Logos by Simple Icons (CC0). Type is Geist.</p>
+        <p class="caption-5">3D scans by Poly Haven (CC0). <a href="https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7" target="_blank" rel="noopener">iPhone 15 Pro Max model</a> by <a href="https://sketchfab.com/Polyman_3D" target="_blank" rel="noopener">polyman</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, logo removed. Earth: NASA Blue Marble and Black Marble. Logos by Simple Icons (CC0). Type: Geist and Yellowtail.</p>
       </div>
       <button class="to-top" id="to-top" aria-label="Back to top" data-cursor="Up" data-why="The arrow leaves a trail as it launches, because going back up should feel like lift off, not a rewind.">
         <svg class="ico ico-up" viewBox="0 0 24 24"><path class="trail" d="M12 22v-6"/><path d="M12 16V4M6 10l6-6 6 6"/></svg>
@@ -494,7 +454,7 @@
   </dialog>
   <dialog id="dlg-terms" class="dlg" aria-labelledby="dlg-terms-t">
     <h2 id="dlg-terms-t" class="heading-4">Terms</h2>
-    <p class="body-6">Content on this site describes the services of ARFORGE. Project scope, price and timelines are agreed in writing before work begins. Third party assets are used under their licences: Poly Haven models (CC0), Simple Icons (CC0) and NASA imagery (public domain).</p>
+    <p class="body-6">Content on this site describes the services of ARFORGE. Project scope, price and timelines are agreed in writing before work begins. Third party assets are used under their licences: Poly Haven models (CC0), the iPhone 15 Pro Max model by polyman (CC BY 4.0, modified: logo hidden, materials and screen replaced), Simple Icons (CC0) and NASA imagery (public domain). iPhone is a trademark of Apple Inc.; ARFORGE is not affiliated with Apple.</p>
     <form method="dialog"><button class="btn btn-ghost btn-sm"><span class="button-sm">Close</span></button></form>
   </dialog>
 

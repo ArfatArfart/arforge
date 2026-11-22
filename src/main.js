@@ -1,5 +1,6 @@
 import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
+import '@fontsource/yellowtail';
 import './styles/main.css';
 import './styles/fx.css';
 import gsap from 'gsap';
@@ -10,6 +11,7 @@ import { applyTheme } from './themes.js';
 import { initWords, initTagline } from './fx/words.js';
 import { initCursor, initMagnetic, initNav, initAnchors, initWhy, initSound, initGlass } from './ui.js';
 import { initTextures } from './fx/texture.js';
+import { Intro } from './fx/intro.js';
 import * as S from './sections.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -44,14 +46,11 @@ if (lenis) {
 }
 
 /* ---------- the stage (with a graceful fallback when WebGL is missing) */
-const loaderNum = document.getElementById('loader-num');
-const loaderFill = document.getElementById('loader-fill');
 const loaderFile = document.getElementById('loader-file');
-const shown = { v: 0 };
+const intro = new Intro(document.getElementById('loader'), '#FF5C1B');
 const onProgress = (p, file) => {
-  gsap.to(shown, { v: p * 100, duration: 0.5, ease: 'power2.out', overwrite: true, onUpdate: () => { loaderNum.textContent = String(Math.round(shown.v)).padStart(3, '0'); } });
-  gsap.to(loaderFill, { scaleX: p, duration: 0.5, ease: 'power2.out', overwrite: true });
-  if (file && file !== 'ready') loaderFile.textContent = `Receiving ${file}`;
+  intro.progress(p);
+  if (file && file !== 'ready') loaderFile.textContent = `Loading ${file}, ${Math.round(p * 100)} percent`;
 };
 
 let stage;
@@ -110,8 +109,8 @@ let rz;
 window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { stage.resize(); ScrollTrigger.refresh(); }, 180); });
 
 /* ---------- build the page */
-applyTheme('obsidian', stage, true);
-await document.fonts.ready.catch(() => {});
+applyTheme('molten', stage, true);
+await Promise.all([document.fonts.ready, document.fonts.load('700 120px "Geist Variable"'), document.fonts.load('400 120px Yellowtail')]).catch(() => {});
 const headings = initWords({ reduced });
 initTagline(document.getElementById('tagline'), { reduced });
 initTextures({ reduced });
@@ -164,29 +163,24 @@ ScrollTrigger.refresh();
 async function boot() {
   try { await stage.loadCritical(); }
   catch (e) { console.error(e); loaderFile.textContent = 'The 3D scan could not load. Continuing without it.'; onProgress(1, 'ready'); }
-  loaderFile.textContent = 'Strike';
-  await new Promise((r) => setTimeout(r, 350));
+  await intro.play();
   const loader = document.getElementById('loader');
-  const tl = gsap.timeline();
-  tl.to('.loader-inner', { scale: 0.92, opacity: 0, duration: 0.35, ease: 'power3.in' })
-    .to('.loader-half.top', { yPercent: -100, duration: 1.1, ease: 'expo.inOut' }, '+=0.05')
-    .to('.loader-half.bottom', { yPercent: 100, duration: 1.1, ease: 'expo.inOut' }, '<')
-    .add(() => {
-      stage.introAt = performance.now();
-      gsap.to(stage, { intro: 1, duration: reduced ? 0.01 : 2.6, ease: 'power2.inOut' });
-      // the studio lights come on one by one: key, rim, top, then the first sweep
-      gsap.to(stage, { lights: 1, duration: reduced ? 0.01 : 2.6, delay: reduced ? 0 : 1.5, ease: 'power1.inOut' });
-      if (STILL) document.documentElement.classList.add('still');
-      headings.get(document.getElementById('hero-title'))?.play();
-      gsap.to('.reveal-up', { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.1, delay: 0.5 });
-      S.initHeroProof();
-    }, '<0.25')
-    .add(() => {
-      loader.remove();
-      document.body.classList.remove('is-loading');
-      lenis?.start();
-      ScrollTrigger.refresh();
-    });
+  stage.introAt = performance.now();
+  // the orange flood hands over to the live hero, which is the same orange
+  gsap.to(loader, { opacity: 0, duration: 0.45, ease: 'power2.out', onComplete: () => loader.remove() });
+  gsap.to(stage, { intro: 1, duration: reduced ? 0.01 : 2.2, ease: 'power2.inOut' });
+  gsap.to(stage, { lights: 1, duration: reduced ? 0.01 : 2.0, delay: reduced ? 0 : 0.6, ease: 'power1.inOut' });
+  gsap.delayedCall(reduced ? 0 : 1.2, () => stage.inkBurst?.());
+  if (stage.title) {
+    gsap.to(stage.title, { rise: 1, duration: reduced ? 0.01 : 1.4, ease: 'none', delay: 0.15, onUpdate: () => { stage.title.dirty = true; } });
+    gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.1, ease: 'power1.inOut', delay: 1.0, onUpdate: () => { stage.title.dirty = true; } });
+  }
+  if (STILL) document.documentElement.classList.add('still');
+  gsap.to('.reveal-up', { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, delay: 1.1 });
+  S.initHeroProof();
+  document.body.classList.remove('is-loading');
+  lenis?.start();
+  ScrollTrigger.refresh();
   await stage.loadRest();
 }
 boot();
