@@ -276,77 +276,87 @@ export function initTerminal(stage, tz) {
    slot are raycast onto the screen mesh and converted to canvas pixels, so
    you drag the knob on the glass itself. A hidden slider keeps it usable
    from the keyboard and screen readers.                                     */
-export function initPhone(stage) {
-  const slot = document.getElementById('phone-slot');
-  const slider = document.getElementById('ship-slider');
-  const toast = document.getElementById('phone-toast');
-  if (!slot) return;
-  const app = () => stage.app;
-  let drag = null;
-  const toPx = (uv) => ({ x: uv.x * 640, y: (1 - uv.y) * 1384 });
-  const hook = () => {
-    const a = app(); if (!a || a.onShip) return;
-    a.onShip = () => {
-      toast.textContent = 'Build 1.0.0 shipped to testers.';
-      slider.setAttribute('aria-valuenow', '100');
-      window.__sound?.strike();
-      stage.celebrate?.();
-      setTimeout(() => { toast.textContent = ''; slider.setAttribute('aria-valuenow', '0'); }, 3000);
-    };
-  };
-  slot.addEventListener('pointerdown', (e) => {
-    hook();
-    const uv = stage.pickScreen?.(e.clientX, e.clientY); const a = app();
-    if (!uv || !a) return;
-    const p = toPx(uv);
-    if (a.hitKnob(p.x, p.y)) {
-      // canvas pixels per screen pixel, so the drag keeps tracking past the glass edge
-      const uv2 = stage.pickScreen?.(e.clientX + 24, e.clientY);
-      const ratio = uv2 ? Math.abs(toPx(uv2).x - p.x) / 24 : 2;
-      a.drag = true; drag = { cx: e.clientX, k: a.knob, ratio };
-      slot.setPointerCapture(e.pointerId); e.preventDefault(); window.__sound?.tick(620);
-    }
-  });
-  slot.addEventListener('pointermove', (e) => {
-    const a = app(); if (!a) return;
-    const uv = stage.pickScreen?.(e.clientX, e.clientY);
-    slot.classList.toggle('on-screen', !!uv);
-    if (!drag) return;
-    a.setKnob(drag.k + ((e.clientX - drag.cx) * drag.ratio) / a.max);
-    slider.setAttribute('aria-valuenow', String(Math.round(a.knob * 100)));
-  });
-  const release = () => { const a = app(); if (!drag || !a) return; drag = null; a.release(); };
-  slot.addEventListener('pointerup', release);
-  slot.addEventListener('pointercancel', release);
-  slider.addEventListener('keydown', (e) => {
-    hook(); const a = app(); if (!a) return;
-    if (e.key === 'ArrowRight') { a.drag = true; a.setKnob(a.knob + 0.2); if (a.knob >= 1) a.release(); else setTimeout(() => { a.drag = false; }, 400); e.preventDefault(); }
-    if (e.key === 'Enter' || e.key === ' ') { a.setKnob(1); a.release(); e.preventDefault(); }
-  });
+export function initPhone() {
+  // the Apps devices are driven by the stage: a MacBook and an iPhone sharing one scroll
 }
 
 /* ================================================================== Process */
 export function initProcess(stage, reduced) {
   const steps = [...document.querySelectorAll('.step')];
+  const plates = steps.map((st) => st.querySelector('.plate'));
   const rail = document.getElementById('rail-fill');
+  const thresholds = steps.map((_, k) => 0.03 + (k * 0.88) / (steps.length - 1));
   let active = -1;
+  const impact = new Map();
+
+  /* a crack grows from the exact point the hammer landed: three jagged branches */
+  const crack = (i, rx) => {
+    const svg = plates[i]?.querySelector('.crack');
+    if (!svg) return;
+    const x0 = rx * 400;
+    const branch = (ang) => {
+      let x = x0, y = 0, d = `M${x.toFixed(1)} 0`;
+      for (let k = 0; k < 7; k++) { x += Math.sin(ang) * 18 + (Math.random() - 0.5) * 22; y += 7 + Math.random() * 5; d += ` L${x.toFixed(1)} ${Math.min(60, y).toFixed(1)}`; }
+      return d;
+    };
+    const ds = [branch(-0.7), branch(0.15), branch(0.9)];
+    svg.innerHTML = ds.map((d) => `<path class="c-dark" d="${d}"/><path class="c-glow" d="${d}"/>`).join('');
+    svg.querySelectorAll('path').forEach((pa) => {
+      const L = pa.getTotalLength();
+      gsap.fromTo(pa, { strokeDasharray: L, strokeDashoffset: L }, { strokeDashoffset: 0, duration: 0.28, ease: 'power3.out' });
+    });
+    gsap.to(svg.querySelectorAll('.c-glow'), { opacity: 0.25, duration: 2.2, delay: 0.3, ease: 'power2.out' });
+    const pl = plates[i];
+    pl.style.setProperty('--ix', `${(rx * 100).toFixed(1)}%`);
+    pl.classList.add('is-hot');
+    setTimeout(() => pl.classList.remove('is-hot'), 140);
+  };
+
+  /* the final blow: the last plate breaks into shards that fall away */
+  const shatter = (i) => {
+    const pl = plates[i]; if (!pl) return;
+    const host = steps[i];
+    const pr = pl.getBoundingClientRect(), hr = host.getBoundingClientRect();
+    const cuts = [[0, 0, 22, 0, 30, 55, 0, 100], [22, 0, 48, 0, 44, 60, 30, 55, 26, 100, 0, 100], [48, 0, 70, 0, 62, 48, 44, 60], [44, 60, 62, 48, 74, 100, 26, 100], [70, 0, 100, 0, 100, 40, 62, 48], [62, 48, 100, 40, 100, 100, 74, 100]];
+    cuts.forEach((c) => {
+      const sh = document.createElement('div');
+      sh.className = 'shard';
+      Object.assign(sh.style, { left: `${pr.left - hr.left}px`, top: `${pr.top - hr.top}px`, width: `${pr.width}px`, height: `${pr.height}px` });
+      const pts = []; for (let k = 0; k < c.length; k += 2) pts.push(`${c[k]}% ${c[k + 1]}%`);
+      sh.style.clipPath = `polygon(${pts.join(',')})`;
+      host.appendChild(sh);
+      const cx = (c.filter((_, k) => k % 2 === 0).reduce((a2, v) => a2 + v, 0) / (c.length / 2) - 50) / 50;
+      gsap.to(sh, { x: cx * (60 + Math.random() * 60), y: 140 + Math.random() * 160, rotation: (Math.random() - 0.5) * 70, opacity: 0, duration: 1.3 + Math.random() * 0.5, ease: 'power2.in', onComplete: () => sh.remove() });
+    });
+    pl.classList.add('is-broken');
+    window.__sound?.strike();
+  };
+  const reset = () => plates.forEach((pl) => { if (!pl) return; pl.classList.remove('is-broken'); pl.querySelector('.crack').innerHTML = ''; });
+
+  stage.onStrike = (i) => {
+    window.__sound?.strike();
+    crack(i, impact.get(i) ?? 0.5);
+    gsap.fromTo(steps[i], { y: 0 }, { keyframes: { y: [8, -2, 0] }, duration: 0.45, ease: 'power2.out' });
+    if (i === steps.length - 1) setTimeout(() => shatter(i), 420);
+  };
+
   const hit = (i) => {
     if (i === active) return;
     const forward = i > active;
+    if (i < active && i < steps.length - 1) plates[steps.length - 1]?.classList.remove('is-broken');
+    if (i < 0) reset();
     active = i;
-    steps.forEach((s, k) => s.classList.toggle('is-hit', k <= i));
+    steps.forEach((st, k) => st.classList.toggle('is-hit', k <= i));
     gsap.to(rail, { scaleX: (i + 1) / steps.length, duration: 0.6, ease: 'expo.out' });
-    if (forward && i >= 0) {
-      // on desktop the hammer flies to the card that just locked in and strikes its top edge
-      const r = steps[i]?.getBoundingClientRect();
-      if (r && window.innerWidth > 900 && stage.strikeAt) {
-        const x = Math.min(window.innerWidth * 0.72, Math.max(window.innerWidth * 0.18, r.left + r.width * 0.42));
-        stage.strikeAt(i, x, r.top + 2);
-        gsap.fromTo(steps[i], { y: 0 }, { keyframes: { y: [7, -2, 0] }, duration: 0.5, delay: 0.58, ease: 'power2.out' });
-      } else stage.strike(i);
-    }
+    if (!forward || i < 0) return;
+    // the hammer flies to the card that just locked in and lands on its plate
+    const r = plates[i]?.getBoundingClientRect();
+    if (r && window.innerWidth > 900 && stage.strikeAt) {
+      const x = Math.min(window.innerWidth * 0.74, Math.max(window.innerWidth * 0.16, r.left + r.width * 0.5));
+      impact.set(i, Math.min(0.92, Math.max(0.08, (x - r.left) / r.width)));
+      stage.strikeAt(i, x, r.top + 6);
+    } else { impact.set(i, 0.5); stage.strike(i); }
   };
-  stage.onStrike = () => { window.__sound?.strike(); };
   const mm = gsap.matchMedia();
   mm.add('(min-width: 901px)', () => {
     const track = document.getElementById('process-track');
@@ -354,16 +364,16 @@ export function initProcess(stage, reduced) {
     const tw = gsap.to(track, {
       x: () => -dist(), ease: 'none',
       scrollTrigger: {
-        trigger: '#process', pin: true, start: 'top top', end: () => '+=' + (dist() + window.innerHeight * 0.6), scrub: reduced ? true : 1, invalidateOnRefresh: true,
-        onUpdate: (self) => hit([0.04, 0.3, 0.56, 0.82].filter((x) => self.progress >= x).length - 1),
+        trigger: '#process', pin: true, start: 'top top', end: () => '+=' + (dist() + window.innerHeight * 0.9), scrub: reduced ? true : 1, invalidateOnRefresh: true,
+        onUpdate: (self) => hit(thresholds.filter((x) => self.progress >= x).length - 1),
         onLeaveBack: () => hit(-1),
       },
     });
     return () => tw.scrollTrigger?.kill();
   });
   mm.add('(max-width: 900px)', () => {
-    const sts = steps.map((s, i) => ScrollTrigger.create({ trigger: s, start: 'top 65%', onEnter: () => hit(i), onLeaveBack: () => hit(i - 1) }));
-    return () => sts.forEach((s) => s.kill());
+    const sts = steps.map((st, i) => ScrollTrigger.create({ trigger: st, start: 'top 65%', onEnter: () => hit(i), onLeaveBack: () => hit(i - 1) }));
+    return () => sts.forEach((x) => x.kill());
   });
 }
 

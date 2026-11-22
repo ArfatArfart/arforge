@@ -137,11 +137,11 @@ export class Fluid {
 /* glossy black ink: thickness from density, highlights from its gradient */
 export function inkMaterial(fluid) {
   return new THREE.ShaderMaterial({
-    uniforms: { uDye: { value: null }, uTexel: { value: fluid.dyeTexel }, uOpacity: { value: 1 }, uLight: { value: new THREE.Vector3(-0.45, 0.6, 1).normalize() } },
+    uniforms: { uDye: { value: null }, uTexel: { value: fluid.dyeTexel }, uOpacity: { value: 1 }, uLight: { value: new THREE.Vector3(-0.45, 0.6, 1).normalize() }, uTitle: { value: null }, uShift: { value: 0 }, uLetter: { value: new THREE.Color('#fbfbf7') } },
     transparent: true, depthTest: false, depthWrite: false,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: /* glsl */ `
-      uniform sampler2D uDye; uniform vec2 uTexel; uniform float uOpacity; uniform vec3 uLight; varying vec2 vUv;
+      uniform sampler2D uDye, uTitle; uniform vec2 uTexel; uniform float uOpacity, uShift; uniform vec3 uLight, uLetter; varying vec2 vUv;
       float d(vec2 o){ return texture2D(uDye, vUv + o * uTexel).r; }
       void main(){
         float c = d(vec2(0.0));
@@ -150,8 +150,11 @@ export function inkMaterial(fluid) {
         vec3 n = normalize(vec3(-dx * 6.0, -dy * 6.0, 1.0));
         float spec = pow(max(dot(reflect(-uLight, n), vec3(0.0, 0.0, 1.0)), 0.0), 36.0);
         float rim = smoothstep(0.0, 0.25, length(vec2(dx, dy)));
-        float a = smoothstep(0.06, 0.34, c);
-        vec3 col = vec3(0.015) + spec * 0.85 + rim * 0.03;
+        float a = smoothstep(0.04, 0.26, c);
+        // inside the ink lives the second edition of the hero: the same wordmark, in white
+        float letter = texture2D(uTitle, vec2(vUv.x, vUv.y - uShift * 0.5)).a;
+        vec3 base = mix(vec3(0.015), uLetter, letter);
+        vec3 col = base + spec * 0.85 + rim * 0.03;
         gl_FragColor = vec4(col, a * uOpacity);
       }`,
   });

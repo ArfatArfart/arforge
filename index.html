@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ARFORGE · Software foundry by Arfat</title>
-  <meta name="description" content="ARFORGE is Arfat's software studio. Websites, mobile apps and backend systems, taken from first sketch to production by one team." />
-  <meta name="theme-color" content="#FF5C1B" />
+  <title>Arfat Studio · Websites, apps and backends</title>
+  <meta name="description" content="Arfat Studio builds websites, mobile apps and backend systems, from first sketch to production, with one team." />
+  <meta name="theme-color" content="#F5E23A" />
   <meta name="color-scheme" content="dark light" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="canonical" href="https://arfatarfart.github.io/arforge/" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="ARFORGE · Software foundry by Arfat" />
+  <meta property="og:title" content="Arfat Studio · Websites, apps and backends" />
   <meta property="og:description" content="Raw ideas in. Shipped software out. Web, mobile and backend engineering by one team." />
   <meta property="og:url" content="https://arfatarfart.github.io/arforge/" />
   <meta property="og:image" content="https://arfatarfart.github.io/arforge/og.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="ARFORGE · Software foundry by Arfat" />
+  <meta name="twitter:title" content="Arfat Studio · Websites, apps and backends" />
   <meta name="twitter:description" content="Raw ideas in. Shipped software out." />
   <meta name="twitter:image" content="https://arfatarfart.github.io/arforge/og.jpg" />
   <link rel="preload" href="/models/iphone_15_pro_max.glb" as="fetch" crossorigin />
@@ -26,7 +26,7 @@
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "ARFORGE",
+    "name": "Arfat Studio",
     "founder": { "@type": "Person", "name": "Arfat" },
     "url": "https://arfatarfart.github.io/arforge/",
     "sameAs": ["https://github.com/ArfatArfart"],
@@ -62,9 +62,9 @@
 
   <!-- ============ NAV ============ -->
   <header class="nav glass" id="nav">
-    <a class="brand" href="#hero" aria-label="ARFORGE home" data-cursor="Home">
+    <a class="brand" href="#hero" aria-label="Arfat Studio home" data-cursor="Home">
       <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path class="la" d="M6 27 L16 5 L26 27"/><path class="lb" d="M10.5 19 H25"/><circle class="spark" cx="27.5" cy="19" r="1.6"/></svg>
-      <span class="brand-word title-3">ARFORGE</span>
+      <span class="brand-word title-3">ARFAT<em class="brand-script">studio</em></span>
     </a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#web" class="title-4" data-nav="web">Services</a>
@@ -107,7 +107,7 @@
 
     <!-- ===================================================== 00 HERO · molten, liquid, one object -->
     <section id="hero" class="hero" data-theme="molten" data-shot="devices" aria-labelledby="hero-title">
-      <h1 id="hero-title" class="sr-only">ARFORGE studio. Websites, apps and backends, forged by Arfat.</h1>
+      <h1 id="hero-title" class="sr-only">Arfat Studio. Websites, apps and backends, forged by Arfat.</h1>
       <div class="hero-ui">
         <p class="hero-line title-1 reveal-up">Websites, apps and backends.<br />Forged by Arfat.</p>
         <div class="hero-actions reveal-up">
@@ -118,7 +118,7 @@
           <a class="link-under button-md" href="#work" data-cursor="Scroll">See the work</a>
         </div>
       </div>
-      <p class="hero-hint caption-4 mono reveal-up" data-why="The ink is a real fluid simulation solved on your GPU every frame. The phone and your cursor push it, so it behaves like liquid, not like an animation."><span class="live-dot" aria-hidden="true"></span> Live fluid · move your cursor</p>
+      <p class="hero-hint caption-4 mono reveal-up" data-why="The ink is a real fluid simulation solved on your GPU every frame. The phone and your cursor push it, so it behaves like liquid, not like an animation."><span class="live-dot" aria-hidden="true"></span> Live fluid · move your cursor over the phone</p>
       <p class="hero-proof caption-4 mono reveal-up" id="hero-proof"><b id="proof-repos">13</b> repos · <b id="proof-live">9</b> live</p>
       <a class="hero-down" href="#manifesto" aria-label="Scroll to the next section" data-cursor="Scroll">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M6 14l6 6 6-6"/></svg>
@@ -194,10 +194,8 @@
             <li><span class="caption-4 mono">Release</span><span class="body-5">App Store and Play Store delivery</span></li>
           </ul>
         </div>
-        <div class="phone-slot" id="phone-slot" data-cursor="Drag" data-why="This section is about touch, so it is the one place you get something to drag. The slider lives on the real 3D screen and your pointer is raycast onto it.">
-          <div class="slot-help caption-4 mono" aria-hidden="true"><span class="live-dot"></span> Drag the knob on the screen</div>
-          <div class="sr-only" id="ship-slider" role="slider" tabindex="0" aria-label="Slide to ship the release" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-          <p class="sr-only" id="phone-toast" role="status"></p>
+        <div class="phone-slot devices-slot" id="phone-slot" aria-label="A MacBook and an iPhone running the same live website, scrolling in sync" data-why="Responsive design shown, not claimed: one real site, two real devices, one shared scroll, so you watch the same page reflow from laptop to phone.">
+          <div class="slot-help caption-4 mono" aria-hidden="true"><span class="live-dot"></span> One site · two screens · one scroll</div>
         </div>
       </div>
     </section>
@@ -224,7 +222,7 @@
           </ul>
         </div>
         <div class="terminal glass" aria-label="Live network terminal" data-why="Backends are invisible, so this terminal prints the real requests this page just made, with real timings.">
-          <div class="term-bar"><span></span><span></span><span></span><p class="caption-5 mono">arforge@edge: ~/live</p></div>
+          <div class="term-bar"><span></span><span></span><span></span><p class="caption-5 mono">arfat@edge: ~/live</p></div>
           <pre class="term-body mono" id="term" aria-live="polite"></pre>
         </div>
       </div>
@@ -236,40 +234,58 @@
         <header class="process-head">
           <p class="sec-label caption-3 mono"><span>04</span> Process</p>
           <h2 id="process-title" class="heading-1" data-tex="molten">
-            <span class="w" data-fx="count" data-to="4">Four</span>
+            <span class="w" data-fx="count" data-to="6">Six</span>
             <span class="w" data-fx="strike">strikes</span> from
             <span class="w" data-fx="sketch">sketch</span> to
-            <span class="w" data-fx="launch">ship.</span>
+            <span class="w" data-fx="launch">scale.</span>
           </h2>
         </header>
         <div class="process-track" id="process-track">
           <article class="step glass" data-step="0">
+            <div class="plate" aria-hidden="true"><span class="plate-n mono">01</span><svg class="crack" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
             <svg class="ico ico-flame" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 43c-8 0-13-5.5-13-12.5 0-6 4.5-10 6.5-15 1 3.5 3 5.5 5 6 0-6 3-11.5 8-16-.5 6 6.5 11 6.5 22.5C37 37.5 32 43 24 43Z"/><path class="core" d="M24 43c-3.5 0-6-2.5-6-6 0-3 2.5-5 3.5-8 2 2.5 3.5 2.5 4.5 2 .5 2.5 4 4 4 6.5 0 3-2.5 5.5-6 5.5Z"/></svg>
             <p class="caption-3 mono step-k">Strike 01 · Heat</p>
             <h3 class="heading-3" data-tex="molten">Discovery</h3>
             <p class="body-3">A short sprint to map your users, your risks and the one number that defines success. You leave with a scoped plan and a fixed quote.</p>
           </article>
           <article class="step glass" data-step="1">
+            <div class="plate" aria-hidden="true"><span class="plate-n mono">02</span><svg class="crack" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
             <svg class="ico ico-pen" viewBox="0 0 48 48" aria-hidden="true"><path class="curve" d="M6 38c8-2 10-14 18-16s12 8 18 4"/><path d="M33 7l8 8-17 17-9 1 1-9Z"/></svg>
             <p class="caption-3 mono step-k">Strike 02 · Shape</p>
             <h3 class="heading-3" data-tex="molten">Design</h3>
             <p class="body-3">Flows, wireframes and a clickable prototype, tested with real users before any production code begins.</p>
           </article>
           <article class="step glass" data-step="2">
+            <div class="plate" aria-hidden="true"><span class="plate-n mono">03</span><svg class="crack" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
             <svg class="ico ico-hammer" viewBox="0 0 48 48" aria-hidden="true"><g class="hm"><path d="M22 18l18 18-4 4-18-18"/><path d="M10 6l14 0 6 6-4 4-6-2-6 6-8-8 6-6Z"/></g><path class="hit" d="M38 44h8M42 40v8"/></svg>
             <p class="caption-3 mono step-k">Strike 03 · Strike</p>
             <h3 class="heading-3" data-tex="molten">Build</h3>
             <p class="body-3">Weekly releases. Every Friday you get a working build, a changelog and a link you can share with your team.</p>
           </article>
           <article class="step glass" data-step="3">
+            <div class="plate" aria-hidden="true"><span class="plate-n mono">04</span><svg class="crack" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
             <svg class="ico ico-shield" viewBox="0 0 48 48" aria-hidden="true"><path class="outline" d="M24 4l16 6v12c0 10-7 18-16 22C15 40 8 32 8 22V10Z"/><path class="fill" d="M24 4l16 6v12c0 10-7 18-16 22C15 40 8 32 8 22V10Z"/><path class="tick" d="M17 24l5 5 10-11"/></svg>
             <p class="caption-3 mono step-k">Strike 04 · Temper</p>
             <h3 class="heading-3" data-tex="molten">Launch</h3>
             <p class="body-3">Load tests, monitoring and a hardened release. Then 30 days of post launch care, included in every build.</p>
           </article>
+          <article class="step glass" data-step="4">
+            <div class="plate" aria-hidden="true"><span class="plate-n mono">05</span><svg class="crack" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
+            <svg class="ico ico-scale" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 42h36M6 42V6"/><rect class="bar b1" x="11" y="30" width="6" height="12" rx="1.5"/><rect class="bar b2" x="21" y="22" width="6" height="20" rx="1.5"/><rect class="bar b3" x="31" y="12" width="6" height="30" rx="1.5"/><path class="arrow" d="M12 24l10-8 8 5 10-11M35 10h5v5"/></svg>
+            <p class="caption-3 mono step-k">Strike 05 · Scale</p>
+            <h3 class="heading-3" data-tex="molten">Scale</h3>
+            <p class="body-3">Caching, queues and autoscaling, load tested against the traffic you plan for, not the traffic you have today.</p>
+          </article>
+          <article class="step glass" data-step="5">
+            <div class="plate" aria-hidden="true"><span class="plate-n mono">06</span><svg class="crack" viewBox="0 0 400 60" preserveAspectRatio="none"></svg></div>
+            <svg class="ico ico-care" viewBox="0 0 48 48" aria-hidden="true"><path class="pulse" d="M4 26h9l4-10 6 20 5-14 3 4h13"/><circle cx="24" cy="24" r="20"/></svg>
+            <p class="caption-3 mono step-k">Strike 06 · Care</p>
+            <h3 class="heading-3" data-tex="molten">Care</h3>
+            <p class="body-3">Monitoring, monthly updates and a named engineer who already knows your codebase when something needs to change.</p>
+          </article>
         </div>
-        <div class="process-rail" aria-hidden="true"><span class="rail-fill" id="rail-fill"></span><span class="rail-ticks"><i></i><i></i><i></i><i></i></span></div>
-        <p class="process-note caption-2" data-why="The hammer only strikes when a step locks into place, so every milestone lands with weight you can feel.">The real 3D hammer strikes once per milestone. Metal is shaped by repeated blows, and so is software.</p>
+        <div class="process-rail" aria-hidden="true"><span class="rail-fill" id="rail-fill"></span><span class="rail-ticks"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <p class="process-note caption-2" data-why="The hammer only strikes when a step locks into place, and each plate cracks where it is hit, so progress leaves a mark you can see.">The real 3D hammer strikes the plate on each milestone. Every blow cracks it a little more, and the last one breaks it. Metal is shaped by repeated blows, and so is software.</p>
       </div>
     </section>
 
@@ -429,7 +445,7 @@
       </div>
       <div class="foot-col credits">
         <p class="caption-3 mono">Real assets</p>
-        <p class="caption-5">3D scans by Poly Haven (CC0). <a href="https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7" target="_blank" rel="noopener">iPhone 15 Pro Max model</a> by <a href="https://sketchfab.com/Polyman_3D" target="_blank" rel="noopener">polyman</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, logo removed. Earth: NASA Blue Marble and Black Marble. Logos by Simple Icons (CC0). Type: Geist and Yellowtail.</p>
+        <p class="caption-5">3D scans by Poly Haven (CC0). <a href="https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7" target="_blank" rel="noopener">iPhone 15 Pro Max model</a> by <a href="https://sketchfab.com/Polyman_3D" target="_blank" rel="noopener">polyman</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, logo removed. MacBook Pro model from <a href="https://github.com/pmndrs/examples" target="_blank" rel="noopener">pmndrs/examples</a> (MIT). Earth: NASA Blue Marble and Black Marble. Logos by Simple Icons (CC0). Type: Geist and Yellowtail.</p>
       </div>
       <button class="to-top" id="to-top" aria-label="Back to top" data-cursor="Up" data-why="The arrow leaves a trail as it launches, because going back up should feel like lift off, not a rewind.">
         <svg class="ico ico-up" viewBox="0 0 24 24"><path class="trail" d="M12 22v-6"/><path d="M12 16V4M6 10l6-6 6 6"/></svg>
@@ -437,11 +453,11 @@
     </div>
 
     <div class="wordmark" id="wordmark" aria-hidden="true">
-      <span class="wm-outline">ARFORGE</span>
-      <span class="wm-fill">ARFORGE</span>
+      <span class="wm-outline">ARFAT</span>
+      <span class="wm-fill">ARFAT</span>
     </div>
     <div class="footer-base caption-5">
-      <span>© <span id="year">2026</span> ARFORGE. Designed and engineered by Arfat.</span>
+      <span>© <span id="year">2026</span> Arfat Studio. Designed and engineered by Arfat.</span>
       <span class="mono">Built with three.js, GSAP and Lenis</span>
     </div>
   </footer>
@@ -454,7 +470,7 @@
   </dialog>
   <dialog id="dlg-terms" class="dlg" aria-labelledby="dlg-terms-t">
     <h2 id="dlg-terms-t" class="heading-4">Terms</h2>
-    <p class="body-6">Content on this site describes the services of ARFORGE. Project scope, price and timelines are agreed in writing before work begins. Third party assets are used under their licences: Poly Haven models (CC0), the iPhone 15 Pro Max model by polyman (CC BY 4.0, modified: logo hidden, materials and screen replaced), Simple Icons (CC0) and NASA imagery (public domain). iPhone is a trademark of Apple Inc.; ARFORGE is not affiliated with Apple.</p>
+    <p class="body-6">Content on this site describes the services of Arfat Studio. Project scope, price and timelines are agreed in writing before work begins. Third party assets are used under their licences: Poly Haven models (CC0), the iPhone 15 Pro Max model by polyman (CC BY 4.0, modified: logo hidden, materials and screen replaced), the MacBook Pro model from pmndrs/examples (MIT, screen replaced), Simple Icons (CC0) and NASA imagery (public domain). iPhone and MacBook are trademarks of Apple Inc.; Arfat Studio is not affiliated with Apple.</p>
     <form method="dialog"><button class="btn btn-ghost btn-sm"><span class="button-sm">Close</span></button></form>
   </dialog>
 
@@ -463,7 +479,7 @@
     <p class="caption-2">Every animated element now shows why it moves the way it does. Hover any marker to read it. Press <kbd>W</kbd> to toggle.</p>
   </div>
 
-  <noscript><p class="noscript body-3">ARFORGE builds websites, mobile apps and backend systems. Turn on JavaScript to see the full experience.</p></noscript>
+  <noscript><p class="noscript body-3">Arfat Studio builds websites, mobile apps and backend systems. Turn on JavaScript to see the full experience.</p></noscript>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

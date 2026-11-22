@@ -1,45 +1,53 @@
-# ARFORGE · Software foundry by Arfat
+# Arfat Studio · Websites, apps and backends
 
 **Live:** https://arfatarfart.github.io/arforge/
 
 A portfolio built like one long hero section. One WebGL stage sits behind the whole page and
-travels between **real, photoscanned 3D objects** as you scroll. Every section has its own
-theme, every headline word moves the way it means, and every number on the page is measured live.
+travels between **real 3D objects** as you scroll. Every section has its own theme, every piece
+of text moves for a reason, and every number on the page is measured live.
 
 ## What is real here
 
 | Asset | Source | Licence |
 |---|---|---|
-| Marble bust, classic laptop, circuit board, digital watch, cross pein hammer (2K, watch from the 4K source) | [Poly Haven](https://polyhaven.com/models) photogrammetry scans | CC0 |
-| Type materials: titanium, black marble, blue steel, molten metal, brass, graphite and more | [Poly Haven](https://polyhaven.com/textures) photo textures, re-graded per theme | CC0 |
-| Phone screens | Mobile captures of Arfat's live GitHub Pages projects | Own work |
+| Marble bust, classic laptop, circuit board, cross pein hammer (2K) | [Poly Haven](https://polyhaven.com/models) photogrammetry scans | CC0 |
 | Studio lighting (`studio_small_09`) | Poly Haven HDRI | CC0 |
 | iPhone 15 Pro Max (hero and Apps phones) | [polyman on Sketchfab](https://sketchfab.com/3d-models/apple-iphone-15-pro-max-black-df17520841214c1792fb8a44c6783ee7), logo hidden, materials and screen replaced | CC BY 4.0 |
-| Earth day, night lights, clouds, star map | NASA Blue Marble and Black Marble (via the three-globe package), NASA cloud map | Public domain |
+| MacBook Pro (Apps) | [pmndrs/examples](https://github.com/pmndrs/examples), floating laptop demo, screen replaced | MIT |
+| Earth day, night lights, clouds, normals, star map | NASA Blue Marble and Black Marble (via the three-globe package) | Public domain |
 | Technology logos | [Simple Icons](https://simpleicons.org) | CC0 |
-| Work screenshots | Headless captures of Arfat's live GitHub Pages projects | Own work |
-| Work data, repo counts, terminal requests | GitHub REST API, called live from the browser | n/a |
+| Script type | Yellowtail via Fontsource | OFL |
+| Phone and laptop screens, work screenshots | Headless captures of Arfat's live GitHub Pages projects | Own work |
+| Work data, repo counts, terminal requests, ISS position | GitHub REST API and wheretheiss.at, called live from the browser | n/a |
 
 ## The ideas
 
-- **A product studio hero.** A flagship class phone engineered in code to real proportions (titanium frame with an anisotropic shader, frosted back with a gloss etched mark, iridescent lenses, buttons, antenna bands, ports) floats with the scanned watch over a glossy floor, under area lights and a moving light sweep. Its screen flicks through Arfat's real projects. Scrolling turns it around while callouts pin to real points on the model.
-- **Cinematic finish.** MSAA HDR buffer, bloom, Neutral tone mapping, film grain, vignette and a touch of chromatic aberration on desktop. Every motion is damped.
-- **Material typography.** Each heading is filled with a real photographic material and a specular band follows your cursor across the letters.
-- **A phone you can use.** In Apps, drag the slider on the 3D phone's own glass: the pointer is raycast onto the screen mesh and drives the app canvas.
+- **A fluid hero.** A yellow stage, the ARFAT wordmark with a hand written "studio", and a real
+  iPhone in the centre running Arfat's live sites. Your cursor stirs a GPU stable fluids solver
+  (curl, vorticity, pressure). Where the ink flows it reveals a second edition of the scene:
+  the letters turn white inside it, and the website on the phone switches, cell by cell, to a
+  night colour scheme. The phone body never changes, only its screen.
+- **Screen VFX.** Sites on the phone change with a pixel sweep: the screen is cut into cells and
+  each one flips from the old page to the new one behind a hot scan line.
+- **One site, two screens.** In Apps a MacBook and a smaller iPhone in front of it run the same
+  site and scroll together off one shared clock, so you see the page reflow from laptop to phone.
+- **Six strikes.** In Process the real 3D hammer flies to each milestone and strikes its plate.
+  Each blow cracks the plate where it lands; the sixth blow breaks it into falling shards.
+- **Text with motion design.** Body copy rises line by line out of masks, section labels decode
+  from random glyphs, spec rows wipe in the direction you read, FAQ questions arrive word by word,
+  and headline words move the way they mean (`src/fx/words.js`).
+- **Cinematic finish.** MSAA HDR buffer, bloom, Neutral tone mapping, vignette and a touch of
+  chromatic aberration on desktop. Every motion is damped.
 - **One continuous stage.** `src/gl/stage.js` maps scroll position to a float like `2.4`
   (40% of the way from shot 2 to shot 3). The outgoing mesh burns away with a glowing forge edge,
-  its surface becomes ~28k particles sampled from the real scan and coloured by its real texture,
-  the particles ride a curl noise current, and the next object is forged in.
-- **Semantic motion.** `src/fx/words.js` holds 32 word effects. "Blink" blinks, "late" arrives late,
-  "Zero" empties into an outline, "measured" prints its own pixel width. Each effect carries a reason.
+  its surface becomes particles sampled from the real model and coloured by its texture,
+  and the next object is forged in. The Earth forms slowly so its colours have time to settle.
 - **Why mode.** Press `W` (or the Why button) and every animated element shows a pin explaining
-  why it moves the way it does. The 3D scene switches to x-ray wireframe.
-- **Themes from materials.** Obsidian, ivory, blueprint, acid, phosphor, ember, paper, spectrum,
-  instrument, chalk and void. Colours, cursor shape, background texture and particle ink change together.
+  why it moves the way it does.
 - **Proof, not claims.** The proof panel reads frame rate, frame time, points drawn, draw calls,
   bytes transferred and time to first strike from your own browser.
-- **The footer is a hero too.** A real Earth lit by where the sun is this minute, pointed at your
-  time zone, with letters that heat up near your cursor and cool slowly like metal.
+- **The footer is a hero too.** A real Earth lit by where the sun is this minute, with the live
+  position of the International Space Station.
 
 ## Run it
 
@@ -61,19 +69,23 @@ the contact form opens a ready to send message. Without one it copies the brief 
 ```
 src/
   main.js            boot, scroll to shot mapping, theme triggers
-  themes.js          the eleven section themes
+  themes.js          the section themes
   ui.js              cursor, magnetic buttons, nav, Why mode, synthesised sound
-  sections.js        work, stack sphere, live metrics, terminal, phone demo, process, footer
+  sections.js        work, stack sphere, live metrics, terminal, process, footer
+  fx/intro.js        the opening spark and colour flood
   fx/words.js        semantic word effects and the tagline reveal
+  fx/textmotion.js   line, label, spec and FAQ text motion
+  fx/texture.js      gradient typography with a cursor sheen
   gl/stage.js        renderer, shots, layouts, loading, hammer strikes, Earth
-  gl/particles.js    morph field, embers, sparks
-  gl/materials.js    forge dissolve, hero scan slices, Earth and atmosphere shaders
+  gl/fluid.js        stable fluids solver and the ink that reveals the second edition
+  gl/title.js        the ARFAT wordmark drawn for the fluid
+  gl/phone.js        iPhone and MacBook setup, Safari and macOS screens, pixel VFX
+  gl/particles.js    morph field and sparks
+  gl/materials.js    forge dissolve, Earth and atmosphere shaders
   gl/targets.js      surface sampling of real meshes into particle targets
   gl/screen.js       the live code display mapped onto the laptop screen
-  gl/phone.js        the engineered phone, its showcase screen and the ship app
-  fx/texture.js      material typography with a cursor sheen
 public/
-  models/            meshopt + WebP compressed GLBs
+  models/            compressed GLBs
   hdri/  textures/   lighting and Earth maps
   work/              screenshots of live projects
 ```

@@ -65,8 +65,9 @@ export function patchForge(material, shared) {
         `#include <dithering_fragment>
           if (below > 0.5) gl_FragColor.rgb = mix(gl_FragColor.rgb, uScanColor * (0.5 + slice * 0.9), 0.75);`
       );
+    if (material.userData.extraPatch) material.userData.extraPatch(shader);
   };
-  material.customProgramCacheKey = () => 'forge-v2';
+  material.customProgramCacheKey = () => (material.userData.extraPatch ? 'forge-v2-screen' : 'forge-v2');
   material.needsUpdate = true;
 }
 

@@ -14,7 +14,7 @@ import { MorphField, Sparks } from './particles.js';
 import { patchForge, forgeUniforms, earthMaterial, cloudMaterial, atmosphereMaterial } from './materials.js';
 import { sampleModel, dustTarget, sheetTarget, sphereTarget, ringsTarget, earthTarget, toTextures } from './targets.js';
 import { LaptopScreen } from './screen.js';
-import { makeIPhone, SafariScreen, ShipApp, IPHONE } from './phone.js';
+import { makeIPhone, makeMacBook, SafariScreen, MacScreen, Pacer, screenUniforms, IPHONE, MACBOOK } from './phone.js';
 import { Fluid, inkMaterial } from './fluid.js';
 import { HeroTitle, titleMaterial } from './title.js';
 
@@ -131,7 +131,7 @@ const SHOTS = [
 ];
 
 const LAYOUT = {
-  devices: (w, h, m) => (m ? { x: w * 0.14, y: h * 0.06, s: h * 0.36 } : { x: Math.max(w * 0.2, w * 0.5 - h * 0.42), y: -h * 0.02, s: h * 0.68 }),
+  devices: (w, h, m) => (m ? { x: 0, y: h * 0.06, s: h * 0.3 } : { x: 0, y: -h * 0.02, s: h * 0.55 }),
   bust:   (w, h, m) => (m ? { x: w * 0.12, y: h * 0.22, s: h * 0.42 } : { x: w * 0.3, y: -h * 0.06, s: h * 0.8 }),
   laptop: (w, h, m) => (m ? { x: 0, y: h * 0.25, s: Math.min(w * 0.75, h * 0.34), ry: -0.25, rx: 0.2 } : { x: w * 0.25, y: -h * 0.04, s: h * 0.5, ry: -0.45, rx: 0.16 }),
   phone:  (w, h, m) => ({ x: m ? 0 : w * 0.25, y: 0, s: h * (m ? 0.5 : 0.62) }),
@@ -264,7 +264,6 @@ export class Stage {
     hdr.dispose(); pmrem.dispose();
     this.phoneScene = (await this.gltf.parseAsync(phoneBuf, BASE + 'models/')).scene;
     this.mountDevices();
-    this.mountApps();
     this.stats.ready = Math.round(performance.now() - t0);
     this.onProgress(1, 'ready');
     this.renderer.compile(this.scene, this.camera);
@@ -272,10 +271,12 @@ export class Stage {
 
   async loadRest() {
     const jobs = this.shots.filter((s) => s.file && !s.ready).map(async (s) => {
+      if (s.custom) return;
       try { const g = await this.gltf.loadAsync(BASE + s.file); this.mountModel(s, g.scene); }
       catch (e) { console.warn('model failed', s.id, e); }
     });
     jobs.push(this.loadEarth().catch((e) => console.warn('earth failed', e)));
+    jobs.push(this.gltf.loadAsync(BASE + MACBOOK.file).then((g) => this.mountApps(g.scene)).catch((e) => console.warn('macbook failed', e)));
     await Promise.all(jobs);
   }
 
@@ -296,11 +297,14 @@ export class Stage {
     this._fromTex = null; this._B = null;
   }
 
-  /* Hero: one real iPhone in holographic chrome, floating in ink */
+  /* Hero: one real iPhone, centre stage, floating in ink */
   mountDevices() {
     const shot = this.byId.devices;
     this.safari = new SafariScreen(SITES.map((x) => ({ ...x, src: BASE + x.src })));
-    const front = makeIPhone(this.phoneScene, { screenTexture: this.safari.texture, envMap: this.studioEnv, chrome: true });
+    this.heroFx = screenUniforms();
+    this.heroFx.uInkGain.value = 1;
+    this.heroFx.uAspectInv.value = 1 / 0.463;
+    const front = makeIPhone(this.phoneScene, { screenTexture: this.safari.texture, finish: 'black', envMap: this.studioEnv, fx: this.heroFx });
     shot.spin.add(front);
     shot.front = front;
     const u = forgeUniforms(); u.uNoiseScale.value = 4.5;
@@ -308,17 +312,24 @@ export class Stage {
     this.finishShot(shot, 1.25);
   }
 
-  /* Apps: a single iPhone running an app you can drag */
-  mountApps() {
+  /* Apps: a MacBook and a smaller iPhone in front, running the same site in sync */
+  mountApps(macScene) {
     const shot = this.byId.phone;
-    this.app = new ShipApp();
-    const phone = makeIPhone(this.phoneScene, { screenTexture: this.app.texture, finish: 'desert', envMap: this.studioEnv });
-    shot.spin.add(phone);
-    shot.phone = phone;
-    this.appScreen = phone.userData.screen;
+    this.pacer = new Pacer();
+    const site = { name: 'forge-gym-demo', host: 'arfatarfart.github.io' };
+    this.macScreen = new MacScreen({ ...site, src: BASE + 'work/desk/forge-gym-demo.webp' }, this.pacer);
+    this.appSafari = new SafariScreen([{ ...site, src: BASE + 'work/scroll/forge-gym-demo.webp' }], { pacer: this.pacer });
+    this.appSafari.boot = 1.01;
+    this.appFx = screenUniforms(); this.appFx.uAspectInv.value = 1 / 0.463;
+    const mac = makeMacBook(macScene, { screenTexture: this.macScreen.texture, envMap: this.studioEnv });
+    mac.position.set(-0.08, -0.04, -0.12); mac.rotation.set(0.08, 0.32, 0);
+    const phone = makeIPhone(this.phoneScene, { screenTexture: this.appSafari.texture, finish: 'natural', envMap: this.studioEnv, fx: this.appFx });
+    phone.scale.setScalar(0.5); phone.position.set(0.4, -0.12, 0.26); phone.rotation.set(0.02, -0.34, 0.03);
+    shot.spin.add(mac, phone);
+    shot.phone = phone; shot.mac = mac;
     const u = forgeUniforms(); u.uNoiseScale.value = 4.5;
     this.prepShot(shot, u);
-    this.app.draw(0);
+    this.macScreen.draw(0); this.appSafari.draw(0);
     this.finishShot(shot, 1.25);
   }
 
@@ -549,18 +560,6 @@ export class Stage {
 
   /* ---------------------------------------------------------------- interactions */
   setPointer(nx, ny) { this.pointer.set(nx, ny); this.pointerActive = true; }
-  pickScreen(cx, cy) {
-    if (!this.appScreen || !this.byId.phone.pivot.visible) return null;
-    const ndc = new THREE.Vector2((cx / window.innerWidth) * 2 - 1, -(cy / window.innerHeight) * 2 + 1);
-    this.raycaster.setFromCamera(ndc, this.camera);
-    const hit = this.raycaster.intersectObject(this.appScreen, false)[0];
-    return hit ? hit.uv : null;
-  }
-  celebrate() {
-    const p = new THREE.Vector3(); this.byId.phone.phone.localToWorld(p.set(0, -0.32, 0.05));
-    this.sparks.fire(p);
-  }
-
   /**
    * The hammer travels to a point on the page and strikes it. The swing
    * pivots at the end of the handle, placed so the head lands exactly on
@@ -618,7 +617,8 @@ export class Stage {
     this.aura.material.uniforms.uTime.value = time;
     this.sparks.tick(dt);
 
-    this.s = Math.abs(this.sTarget - this.s) < 1e-4 ? this.sTarget : damp(this.s, this.sTarget, 5.5, dt);
+    const toEarth = this.sTarget > this.shots.length - 2.2;
+    this.s = Math.abs(this.sTarget - this.s) < 1e-4 ? this.sTarget : damp(this.s, this.sTarget, toEarth ? 1.25 : 5.5, dt);
     this.heroTs = damp(this.heroTs, this.heroT, 4.5, dt);
     this.ptr.x = damp(this.ptr.x, this.pointer.x, 2.6, dt);
     this.ptr.y = damp(this.ptr.y, this.pointer.y, 2.6, dt);
@@ -663,7 +663,7 @@ export class Stage {
       if (introActive) d = sh.id === 'devices' ? 1 - smooth(0.55, 1, this.intro) : 1;
       else if (sh === A && sh === B) d = 0;
       else if (sh === A) d = smooth(0.0, 0.32, t);
-      else if (sh === B) d = 1 - smooth(0.68, 1.0, t);
+      else if (sh === B) d = 1 - (sh.id === 'earth' ? smooth(0.84, 1.0, t) : smooth(0.68, 1.0, t));
       sh.uniforms.uDissolve.value = d;
       sh.uniforms.uTime.value = time;
       if (sh.uniforms.uAtmo) sh.uniforms.uAtmo.value = 1 - d;
@@ -691,7 +691,7 @@ export class Stage {
     if (this.screenAcc > 1 / 30) {
       const sdt = this.screenAcc; this.screenAcc = 0;
       if (this.safari && dv.pivot.visible) this.safari.draw(sdt);
-      if (this.app && ph.pivot.visible) this.app.draw(sdt);
+      if (this.pacer && ph.pivot.visible) { this.pacer.update(sdt); this.macScreen.draw(sdt); this.appSafari.draw(sdt); }
       if (this.screen && this.byId.laptop.pivot.visible) { this.screen.draw(sdt); this.screenTex.needsUpdate = true; }
     }
     if (this.marker) { const k = (time * 0.7) % 1; this.marker.ring.scale.setScalar(1 + k * 2.4); this.marker.ring.material.opacity = 1 - k; }
@@ -713,6 +713,13 @@ export class Stage {
       }
     }
     this.updateInk(dt, time, dv);
+    const db = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    for (const [fx, scr] of [[this.heroFx, this.safari], [this.appFx, this.appSafari]]) {
+      if (!fx || !scr) continue;
+      fx.uPrev.value = scr.prevTexture; fx.uSweep.value = scr.sweep; fx.uSweepOn.value = scr.sweepOn;
+      fx.uScreenTime.value = time; fx.uRes.value.copy(db);
+    }
+    if (this.heroFx) { this.heroFx.uInk.value = this.fluid.texture; this.heroFx.uInkGain.value = this.ink.visible ? 1 : 0; }
 
     this.shake *= Math.pow(0.0008, dt);
     const sx = (Math.random() - 0.5) * 0.05 * this.shake, sy = (Math.random() - 0.5) * 0.05 * this.shake;
@@ -756,6 +763,8 @@ export class Stage {
     this.titleMesh.material.uniforms.uOpacity.value = show;
     this.titleMesh.material.uniforms.uShift.value = (window.scrollY / window.innerHeight) * 1.1;
     this.ink.material.uniforms.uOpacity.value = show;
+    this.ink.material.uniforms.uTitle.value = this.title.texture;
+    this.ink.material.uniforms.uShift.value = this.titleMesh.material.uniforms.uShift.value;
     if (!this.titleMesh.visible) return;
     this.title.draw();
     const f = this.fluid;
@@ -763,7 +772,7 @@ export class Stage {
     const ptr = { x: (this.pointer.x + 1) / 2, y: (this.pointer.y + 1) / 2 };
     if (this.pointerActive && this.lastPtr) {
       const vx = (ptr.x - this.lastPtr.x) / Math.max(dt, 1e-3), vy = (ptr.y - this.lastPtr.y) / Math.max(dt, 1e-3);
-      if (Math.abs(vx) + Math.abs(vy) > 0.02) f.splat(ptr.x, ptr.y, vx * 900, vy * 900, 0.22, 0.0016);
+      if (Math.abs(vx) + Math.abs(vy) > 0.02) f.splat(ptr.x, ptr.y, vx * 1100, vy * 1100, 0.5, this.mobile ? 0.0014 : 0.0026);
     }
     this.lastPtr = ptr;
     // the phone: centre motion plus a slow orbit of ink around its silhouette
@@ -807,24 +816,24 @@ export class Stage {
   animateShots(time, dt) {
     const px = this.ptr.x, py = this.ptr.y;
     const b = this.byId;
-    // hero: the phone floats, sways and leans toward the hand, never still
+    // hero: centre stage; it floats, sways and leans toward the hand, screen always readable
     const dv = b.devices;
     if (dv.layout && dv.front) {
       const L = dv.layout;
-      dv.pivot.position.set(L.x + Math.sin(time * 0.4) * 0.05, L.y + Math.sin(time * 0.9) * 0.04, 0);
-      dv.spin.rotation.set(0.14 - py * 0.22 + Math.sin(time * 0.6) * 0.06, -0.42 + px * 0.6 + Math.sin(time * 0.3) * 0.78, 0.18 + Math.sin(time * 0.5) * 0.07);
+      dv.pivot.position.set(L.x, L.y + Math.sin(time * 0.9) * 0.035, 0);
+      dv.spin.rotation.set(0.06 - py * 0.16 + Math.sin(time * 0.6) * 0.03, px * 0.42 + Math.sin(time * 0.3) * 0.3, Math.sin(time * 0.5) * 0.05 - px * 0.04);
     }
     const ph = b.phone;
     if (ph.layout) {
       const slot = this.slot || (this.slot = document.querySelector('.phone-slot'));
       if (slot) {
         const r = slot.getBoundingClientRect();
-        if (r.height) {
+        if (r.width) {
           ph.pivot.position.set(((r.left + r.width / 2) / window.innerWidth - 0.5) * this.viewW, (0.5 - (r.top + r.height / 2) / window.innerHeight) * this.viewH, 0);
-          ph.pivot.scale.setScalar((r.height / window.innerHeight) * this.viewH * 0.95);
+          ph.pivot.scale.setScalar((r.width / window.innerWidth) * this.viewW * (window.innerWidth < 600 ? 0.7 : 0.86));
         }
       }
-      ph.spin.rotation.set(0.03 - py * 0.05, -0.14 + px * 0.12, 0);
+      ph.spin.rotation.set(0.1 - py * 0.06, -0.12 + px * 0.16, 0);
       ph.spin.position.y = Math.sin(time * 0.9) * 0.008;
     }
     b.bust.spin.rotation.y = damp(b.bust.spin.rotation.y, -0.55 + px * 0.45, 3, dt);

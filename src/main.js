@@ -12,6 +12,7 @@ import { initWords, initTagline } from './fx/words.js';
 import { initCursor, initMagnetic, initNav, initAnchors, initWhy, initSound, initGlass } from './ui.js';
 import { initTextures } from './fx/texture.js';
 import { Intro } from './fx/intro.js';
+import { initTextMotion, heroTextIn } from './fx/textmotion.js';
 import * as S from './sections.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -47,7 +48,7 @@ if (lenis) {
 
 /* ---------- the stage (with a graceful fallback when WebGL is missing) */
 const loaderFile = document.getElementById('loader-file');
-const intro = new Intro(document.getElementById('loader'), '#FF5C1B');
+const intro = new Intro(document.getElementById('loader'), '#F5E23A');
 const onProgress = (p, file) => {
   intro.progress(p);
   if (file && file !== 'ready') loaderFile.textContent = `Loading ${file}, ${Math.round(p * 100)} percent`;
@@ -115,6 +116,7 @@ const headings = initWords({ reduced });
 initTagline(document.getElementById('tagline'), { reduced });
 initTextures({ reduced });
 initGlass();
+initTextMotion({ reduced });
 S.initProcess(stage, reduced);
 // themes follow whichever section crosses 55% of the screen, measured from real
 // layout (pin spacers included), so jumping anywhere always lands on the right world
@@ -148,7 +150,7 @@ S.initFooter(stage, tz);
 S.initWork();
 
 // generic reveals: blocks rise 32px and fade once, on the base curve
-const revealSel = '.sec-label, .chapter-body, .spec-list, .model-note, .slot-help, .terminal, .gauge, .gpu, .faq-list .qa, .stack-copy > p, .chips, .work-sub, .tagline-note, .process-note, .footer-sub, .brief, .footer-mid, .metrics-head > p, .chapter-num';
+const revealSel = '.model-note, .slot-help, .terminal, .gauge, .chips, .brief, .footer-mid, .chapter-num';
 document.querySelectorAll(revealSel).forEach((el) => {
   if (el.closest('#hero')) return;
   if (reduced) return;
@@ -176,7 +178,7 @@ async function boot() {
     gsap.to(stage.title, { write: 1, duration: reduced ? 0.01 : 1.1, ease: 'power1.inOut', delay: 1.0, onUpdate: () => { stage.title.dirty = true; } });
   }
   if (STILL) document.documentElement.classList.add('still');
-  gsap.to('.reveal-up', { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, delay: 1.1 });
+  heroTextIn({ reduced, delay: 1.1 });
   S.initHeroProof();
   document.body.classList.remove('is-loading');
   lenis?.start();

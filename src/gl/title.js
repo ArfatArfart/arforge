@@ -28,16 +28,16 @@ export class HeroTitle {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
     const mobile = w < 760;
-    const word = 'ARFORGE';
+    const word = 'ARFAT';
     // fit the word to the screen: 90% of the width on phones, 78% on desktop
     g.font = '700 100px "Geist Variable", system-ui, sans-serif';
     if ('letterSpacing' in g) g.letterSpacing = '0px';
     const per = (g.measureText(word).width - 100 * 0.055 * (word.length - 1)) / 100;
-    const size = Math.min((w * (mobile ? 0.9 : 0.78)) / per, mobile ? w * 0.3 : h * 0.36);
+    const size = Math.min((w * (mobile ? 0.92 : 0.86)) / per, mobile ? w * 0.34 : h * 0.44);
     g.font = `700 ${size}px "Geist Variable", system-ui, sans-serif`;
     const tw = per * size;
-    const x0 = mobile ? (w - tw) / 2 : w * 0.06;
-    const y0 = mobile ? h * 0.34 : h * 0.52;
+    const x0 = (w - tw) / 2;
+    const y0 = mobile ? h * 0.36 : h * 0.6;
     // bold letters rise out of a baseline mask, one after another
     g.save();
     g.beginPath(); g.rect(0, y0 - size * 0.95, w, size * 1.12); g.clip();
@@ -52,12 +52,12 @@ export class HeroTitle {
     }
     g.restore();
     // script word, revealed like ink from a pen
-    const ss = size * (mobile ? 0.62 : 0.74);
+    const ss = size * (mobile ? 0.36 : 0.3);
     g.save();
     g.font = `400 ${ss}px "Yellowtail", cursive`;
     const sw = g.measureText('studio').width;
-    const sx = mobile ? w * 0.5 - sw * 0.1 : x0 + tw * 0.3;
-    const sy = mobile ? y0 + ss * 0.82 : y0 + ss * 0.58;
+    const sx = x0 + tw - sw * 0.92;
+    const sy = y0 + ss * 0.95;
     g.translate(sx, sy); g.rotate(-0.09);
     g.beginPath(); g.rect(-ss * 0.2, -ss * 1.2, (sw + ss * 0.4) * this.write, ss * 2); g.clip();
     g.fillStyle = '#0a0a0a';
