@@ -191,6 +191,10 @@ export class Stage {
     r.setPixelRatio(this.dpr);
     r.setClearColor('#000000', 1);
     this.renderer = r;
+    // vertex data is released from RAM once it is on the GPU, so if a phone drops the GPU context
+    // (app sent to the background) the page simply reloads instead of showing empty models
+    canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
+    canvas.addEventListener('webglcontextrestored', () => location.reload());
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
@@ -298,6 +302,7 @@ export class Stage {
     this.stats.ready = Math.round(performance.now() - t0);
     this.onProgress(1, 'ready');
     await this.warm(this.shots.filter((s) => s.ready));
+    this.releaseAfterUpload(this.byId.devices.pivot);
   }
 
   /* compile every program these shots need without blocking the page (parallel shader
@@ -323,6 +328,21 @@ export class Stage {
     }
   }
 
+  /* Once a model is on the GPU its CPU copy is dead weight. Free the vertex arrays right
+     after upload (bounds are computed first so culling still works; index arrays stay, Why
+     mode builds its wireframes from them). Nothing on screen changes; a phone keeps the RAM. */
+  releaseAfterUpload(root) {
+    const free = function () { this.array = null; };
+    root.traverse((o) => {
+      const g = o.isMesh && o.geometry;
+      if (!g || !g.index || g.userData.released) return;
+      g.userData.released = true;
+      if (!g.boundingSphere) g.computeBoundingSphere();
+      if (!g.boundingBox) g.computeBoundingBox();
+      for (const a of Object.values(g.attributes)) (a.isInterleavedBufferAttribute ? a.data : a).onUpload(free);
+    });
+  }
+
   /** run heavy work one piece per idle moment, so scrolling never waits on it */
   idle() { return new Promise((res) => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 400 }) : setTimeout(res, 16))); }
 
@@ -338,8 +358,8 @@ export class Stage {
     // every model and texture at the same moment
     const jobs = [];
     for (const s of this.shots) {
-      if (s.file && !s.custom) jobs.push(async () => { const g = await this.gltf.loadAsync(BASE + s.file); await this.idle(); this.mountModel(s, g.scene); await this.warm([s]); });
-      if (s.id === 'phone') jobs.push(async () => { const [p, g] = await Promise.all([this.gltf.loadAsync(BASE + IPHONE.file), this.gltf.loadAsync(BASE + MACBOOK.file)]); await this.idle(); this.phoneScene = p.scene; this.mountApps(g.scene); await this.warm([this.byId.phone]); });
+      if (s.file && !s.custom) jobs.push(async () => { const g = await this.gltf.loadAsync(BASE + s.file); await this.idle(); this.mountModel(s, g.scene); await this.warm([s]); this.releaseAfterUpload(s.pivot); });
+      if (s.id === 'phone') jobs.push(async () => { const [p, g] = await Promise.all([this.gltf.loadAsync(BASE + IPHONE.file), this.gltf.loadAsync(BASE + MACBOOK.file)]); await this.idle(); this.phoneScene = p.scene; this.mountApps(g.scene); await this.warm([this.byId.phone]); this.releaseAfterUpload(this.byId.phone.pivot); });
       if (s.id === 'earth') jobs.push(() => this.loadEarth());
     }
     for (const job of jobs) { try { await job(); } catch (e) { console.warn('load failed', e); } }
@@ -500,6 +520,7 @@ export class Stage {
     const bl = new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'flipY' });
     const L = (f, srgb = true) => bl.loadAsync(BASE + 'textures/earth/' + f).then((bmp) => {
       const t = new THREE.Texture(bmp); t.flipY = false; t.needsUpdate = true;
+      t.onUpdate = () => { if (t.userData.sampled !== false) bmp.close?.(); };
       if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t;
     });
     const [day, night, water, clouds, normal, sky] = await Promise.all([
