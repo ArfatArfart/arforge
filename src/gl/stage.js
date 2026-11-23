@@ -14,7 +14,8 @@ import { MorphField, Sparks } from './particles.js';
 import { patchForge, forgeUniforms, earthMaterial, cloudMaterial, atmosphereMaterial } from './materials.js';
 import { sampleModel, dustTarget, sheetTarget, sphereTarget, ringsTarget, earthTarget, toTextures } from './targets.js';
 import { LaptopScreen } from './screen.js';
-import { makeIPhone, makeMacBook, SafariScreen, MacScreen, Pacer, screenUniforms, IPHONE, MACBOOK } from './phone.js';
+import { makeIPhone, makeMacBook, IPHONE, MACBOOK } from './phone.js';
+import { DeskPaper, LockPaper } from './wallpaper.js';
 import { InkTrail, inkMaterial } from './ink.js';
 import { makePad, padUniforms, animatePad, addPadLights, PAD } from './controller.js';
 import { HeroTitle, titleMaterial } from './title.js';
@@ -50,12 +51,6 @@ export function untone(c) {
   const p = KNEE - (1 - KNEE) * Math.log(1 - (tp - KNEE) / (1 - KNEE));
   return c.map((v) => (v * p) / peak);
 }
-export const SITES = [
-  { name: 'forge-gym-demo', host: 'arfatarfart.github.io', src: 'work/scroll/forge-gym-demo.webp' },
-  { name: 'medinest-pharmacy-demo', host: 'arfatarfart.github.io', src: 'work/scroll/medinest-pharmacy-demo.webp' },
-  { name: 'stationery-point', host: 'arfatarfart.github.io', src: 'work/scroll/stationery-point.webp' },
-  { name: 'NWF-WEB', host: 'arfatarfart.github.io', src: 'work/scroll/nwf-web.webp' },
-];
 
 async function fetchBytes(path, onChunk) {
   const res = await fetch(BASE + path);
@@ -398,21 +393,17 @@ export class Stage {
   /* Apps: a MacBook and a smaller iPhone in front, running the same site in sync */
   mountApps(macScene) {
     const shot = this.byId.phone;
-    this.pacer = new Pacer();
-    const site = { name: 'forge-gym-demo', host: 'arfatarfart.github.io' };
-    this.macScreen = new MacScreen({ ...site, src: BASE + 'work/desk/forge-gym-demo.webp' }, this.pacer);
-    this.appSafari = new SafariScreen([{ ...site, src: BASE + 'work/scroll/forge-gym-demo.webp' }], { pacer: this.pacer });
-    this.appSafari.boot = 1.01;
-    this.appFx = screenUniforms(); this.appFx.uAspectInv.value = 1 / 0.463;
-    const mac = makeMacBook(macScene, { screenTexture: this.macScreen.texture, envMap: this.studioEnv });
+    // still wallpapers with the name: painted once, the clock repaints once a minute
+    this.deskPaper = new DeskPaper();
+    this.lockPaper = new LockPaper();
+    const mac = makeMacBook(macScene, { screenTexture: this.deskPaper.texture, envMap: this.studioEnv });
     mac.position.set(-0.08, -0.04, -0.12); mac.rotation.set(0.08, 0.32, 0);
-    const phone = makeIPhone(this.phoneScene, { screenTexture: this.appSafari.texture, finish: 'natural', envMap: this.studioEnv, fx: this.appFx });
+    const phone = makeIPhone(this.phoneScene, { screenTexture: this.lockPaper.texture, finish: 'natural', envMap: this.studioEnv });
     phone.scale.setScalar(0.5); phone.position.set(0.4, -0.12, 0.26); phone.rotation.set(0.02, -0.34, 0.03);
     shot.spin.add(mac, phone);
     shot.phone = phone; shot.mac = mac;
     const u = forgeUniforms(); u.uNoiseScale.value = 4.5;
     this.prepShot(shot, u);
-    this.macScreen.draw(0); this.appSafari.draw(0);
     this.finishShot(shot, 1.25);
   }
 
@@ -791,7 +782,7 @@ export class Stage {
     this.screenAcc += dt;
     if (this.screenAcc > 1 / 30) {
       const sdt = this.screenAcc; this.screenAcc = 0;
-      if (this.pacer && ph.pivot.visible) { this.pacer.update(sdt); this.macScreen.draw(sdt); this.appSafari.draw(sdt); }
+      if (this.deskPaper && ph.pivot.visible) { this.deskPaper.tick(); this.lockPaper.tick(); }
       if (this.screen && this.byId.laptop.pivot.visible) { this.screen.draw(sdt); this.screenTex.needsUpdate = true; }
     }
     if (this.marker) { const k = (time * 0.7) % 1; this.marker.ring.scale.setScalar(1 + k * 2.4); this.marker.ring.material.opacity = 1 - k; }
@@ -814,11 +805,6 @@ export class Stage {
     }
     this.updateInk(dt, time, dv);
     const db = this.renderer.getDrawingBufferSize(new THREE.Vector2());
-    for (const [fx, scr] of [[this.appFx, this.appSafari]]) {
-      if (!fx || !scr) continue;
-      fx.uPrev.value = scr.prevTexture; fx.uSweep.value = scr.sweep; fx.uSweepOn.value = scr.sweepOn;
-      fx.uScreenTime.value = time; fx.uRes.value.copy(db);
-    }
     if (this.padFx) {
       const f = this.padFx;
       f.uInk.value = this.inkTrail.texture; f.uInkGain.value = this.ink.visible ? 1 : 0;
