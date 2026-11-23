@@ -222,13 +222,19 @@ export function addPadLights(holder, { glowSprites = false } = {}) {
       tp.add(core);
       u.bars.push(core.material);
       if (glowSprites) {
-        for (let k = 0; k < 9; k++) {
-          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(0, 0, 0), blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
-          sp.position.copy(curve.getPoint(0.12 + (k / 8) * 0.88));
-          sp.scale.setScalar(0.11);
-          sp.renderOrder = 4;
-          tp.add(sp);
-          (u.glows || (u.glows = [])).push(sp.material);
+        // phones render without a bloom pass: two layers of soft light along the bar, a bright
+        // inner glow and a wide halo, drawn untoned so the light reads as light, not paint
+        for (let k = 0; k < 14; k++) {
+          const t = 0.08 + (k / 13) * 0.92;
+          for (const [size, layer] of [[0.075, 'inner'], [0.24, 'halo']]) {
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(0, 0, 0), blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true, toneMapped: false }));
+            sp.position.copy(curve.getPoint(t)).addScaledVector(view, 0.01);
+            sp.scale.setScalar(size * (0.75 + 0.5 * t));
+            sp.renderOrder = 4;
+            sp.userData.layer = layer;
+            tp.add(sp);
+            (u.glows || (u.glows = [])).push(sp);
+          }
         }
       }
       // a real light source in the gap, so the glow lands on the touchpad edge and the shell beside it
@@ -281,7 +287,7 @@ export function animatePad(pad, px, py, press, dt, time = 0, on = 1) {
   // DualSense blue: a hot core that blooms, lamps that light the plastic around it
   if (u.bars) u.bars.forEach((m) => m.color.setRGB(0.5 * k, 2.6 * k, 16 * k));
   if (u.lamps) u.lamps.forEach((l) => { l.intensity = 0.02 * k; });
-  if (u.glows) u.glows.forEach((m) => m.color.setRGB(0.12 * k, 0.45 * k, 1.6 * k));
+  if (u.glows) u.glows.forEach((sp) => { if (sp.userData.layer === 'inner') sp.material.color.setRGB(0.45 * k, 0.75 * k, 1.0 * k); else sp.material.color.setRGB(0.05 * k, 0.22 * k, 0.75 * k); });
   if (u.leds) u.leds.forEach((l) => { l.material.opacity = on; });
   if (u.muteMat) u.muteMat.opacity = on * u.press;
 }
