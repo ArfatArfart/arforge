@@ -865,3 +865,16 @@ html[data-theme='ivory'], html[data-theme='paper'], html[data-theme='chalk'] { -
   .step .plate { height: 48px; margin-bottom: var(--s-100); }
   .step .ico { width: 36px; height: 36px; }
 }
+
+/* =====================================================================
+   V7 · phones: each 3D object owns the band at the top of its section
+   and scrolls away with it; desktop spacing a touch tighter
+   ===================================================================== */
+@media (max-width: 759px) {
+  #web, #backend, #metrics { padding-top: 44vh; padding-top: 44svh; }
+  .manifesto { padding-top: 46vh; padding-top: 46svh; }
+  .footer { padding-top: 40vh; padding-top: 40svh; }
+}
+@media (min-width: 901px) {
+  .sec { padding-top: calc(var(--nav-h) + var(--s-800)); padding-bottom: var(--s-800); }
+}

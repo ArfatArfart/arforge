@@ -735,6 +735,16 @@ export class Stage {
     }
 
     this.animateShots(time, dt);
+    // phones: an object sits in the open band at the top of its section and scrolls away with
+    // the page, so text never runs underneath it (desktop keeps the fixed, cinematic stage)
+    if (this.mobile && this.anchorTop) {
+      const k = this.viewH / window.innerHeight;
+      for (const id of ['bust', 'laptop', 'board', 'rings', 'earth']) {
+        const sh = this.byId[id], top = this.anchorTop[id];
+        if (top == null || !sh.layout) continue;
+        sh.pivot.position.y = sh.layout.y + Math.max(0, window.scrollY - top) * k;
+      }
+    }
     A.pivot.updateMatrixWorld(true); if (B !== A) B.pivot.updateMatrixWorld(true);
     fu.uFromM.value.copy(fromM || A.spin.matrixWorld);
     fu.uToM.value.copy(B.spin.matrixWorld);

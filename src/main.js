@@ -83,6 +83,7 @@ function buildShotMap() {
     if (last && last.id === id) last.bottom = bottom; else groups.push({ id, top, bottom });
   });
   shotMap = groups.map((g) => ({ ...g, index: stage.shots ? stage.shots.findIndex((s) => s.id === g.id) : 0 }));
+  stage.anchorTop = Object.fromEntries(groups.map((g) => [g.id, g.top]));
 }
 function shotAt(y) {
   const vh = window.innerHeight;
