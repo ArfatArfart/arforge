@@ -334,17 +334,15 @@ export class Stage {
       s.tex = toTextures(s.proc(this.N), this.W); s.ready = true;
       this._fromTex = null; this._B = null;
     }
-    let chain = Promise.resolve();
-    const mountLater = (fn) => (chain = chain.then(() => this.idle()).then(fn).catch((e) => console.warn(e)));
-    const jobs = this.shots.filter((s) => s.file && !s.ready).map(async (s) => {
-      if (s.custom) return;
-      try { const g = await this.gltf.loadAsync(BASE + s.file); await mountLater(async () => { this.mountModel(s, g.scene); await this.warm([s]); }); }
-      catch (e) { console.warn('model failed', s.id, e); }
-    });
-    jobs.push(this.loadEarth().catch((e) => console.warn('earth failed', e)));
-    jobs.push(Promise.all([this.gltf.loadAsync(BASE + IPHONE.file), this.gltf.loadAsync(BASE + MACBOOK.file)])
-      .then(([p, g]) => mountLater(async () => { this.phoneScene = p.scene; this.mountApps(g.scene); await this.warm([this.byId.phone]); })).catch((e) => console.warn('apps devices failed', e)));
-    await Promise.all(jobs);
+    // everything still loads, one piece after another in page order, so a phone never decodes
+    // every model and texture at the same moment
+    const jobs = [];
+    for (const s of this.shots) {
+      if (s.file && !s.custom) jobs.push(async () => { const g = await this.gltf.loadAsync(BASE + s.file); await this.idle(); this.mountModel(s, g.scene); await this.warm([s]); });
+      if (s.id === 'phone') jobs.push(async () => { const [p, g] = await Promise.all([this.gltf.loadAsync(BASE + IPHONE.file), this.gltf.loadAsync(BASE + MACBOOK.file)]); await this.idle(); this.phoneScene = p.scene; this.mountApps(g.scene); await this.warm([this.byId.phone]); });
+      if (s.id === 'earth') jobs.push(() => this.loadEarth());
+    }
+    for (const job of jobs) { try { await job(); } catch (e) { console.warn('load failed', e); } }
   }
 
   prepShot(shot, uniforms, root = shot.spin) {
@@ -498,8 +496,12 @@ export class Stage {
   }
 
   async loadEarth() {
-    const tl = new THREE.TextureLoader();
-    const L = (f, srgb = true) => tl.loadAsync(BASE + 'textures/earth/' + f).then((t) => { if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t; });
+    // decoded off the main thread (ImageBitmap), so the 4K maps never freeze scrolling
+    const bl = new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'flipY' });
+    const L = (f, srgb = true) => bl.loadAsync(BASE + 'textures/earth/' + f).then((bmp) => {
+      const t = new THREE.Texture(bmp); t.flipY = false; t.needsUpdate = true;
+      if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; return t;
+    });
     const [day, night, water, clouds, normal, sky] = await Promise.all([
       L('earth_day_4096.jpg'), L('earth_night_4096.jpg'), L('earth_water_2048.jpg', false), L('earth_clouds_2048.jpg', false), L('earth_normal_2048.jpg', false), L('night_sky_4096.jpg'),
     ]);
@@ -686,6 +688,7 @@ export class Stage {
     const fu = this.field.uniforms;
     fu.uTime.value = time;
     this.aura.material.uniforms.uTime.value = time;
+    this.aura.visible = this.aura.material.uniforms.uOpacity.value > 0.003;
     this.sparks.tick(dt);
 
     const toEarth = this.sTarget > this.shots.length - 2.2;
@@ -720,7 +723,7 @@ export class Stage {
     }
 
     this.animateShots(time, dt);
-    for (const sh of this.shots) sh.pivot.updateMatrixWorld(true);
+    A.pivot.updateMatrixWorld(true); if (B !== A) B.pivot.updateMatrixWorld(true);
     fu.uFromM.value.copy(fromM || A.spin.matrixWorld);
     fu.uToM.value.copy(B.spin.matrixWorld);
     fu.uMorph.value = morph;
@@ -740,6 +743,8 @@ export class Stage {
       if (sh.uniforms.uAtmo) sh.uniforms.uAtmo.value = 1 - d;
       sh.pivot.visible = d < 0.999;
       sh.vis = 1 - d;
+      // hidden models are skipped by the scene's matrix pass instead of being recomputed every frame
+      sh.pivot.matrixWorldAutoUpdate = sh.pivot.visible || sh === A || sh === B;
     }
 
     const dv = this.byId.devices, ph = this.byId.phone;
@@ -824,7 +829,6 @@ export class Stage {
       if (this.stats.fps < 45 && document.visibilityState === 'visible' && time > 6) this.lowT += 0.5; else this.lowT = 0;
       if (this.lowT >= 1.5) {
         if (this.dpr > 1.25) { this.dpr = Math.max(1.25, this.dpr - 0.25); this.renderer.setPixelRatio(this.dpr); this.resize(); }
-        else if (this.bloom && !this.bloomCut) { this.bloomCut = true; this.bloom.enabled = false; }
         else if (this.dpr > 1) { this.dpr = 1; this.renderer.setPixelRatio(1); this.resize(); }
         this.lowT = 0;
       }
@@ -892,7 +896,8 @@ export class Stage {
       sw.last = { x, y };
       if (k >= 1) this.swoosh = null;
     }
-    T.step(Math.min(dt, 1 / 30), time);
+    if (this.swoosh || speed > 0) this.inkWake = time;
+    if (time - (this.inkWake ?? -99) < T.life * 2.5) T.step(Math.min(dt, 1 / 30), time);
     iu.uInk.value = T.texture;
   }
 

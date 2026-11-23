@@ -455,9 +455,11 @@ export function initFooter(stage, tzInfo) {
     issTick();
     const p = stage.issScreen;
     if (!issLabel) return;
-    if (!p || !visible) { issLabel.style.opacity = '0'; return; }
-    issLabel.style.opacity = String(p.f.toFixed(2));
-    issLabel.style.transform = `translate3d(${p.x.toFixed(0)}px, ${p.y.toFixed(0)}px, 0)`;
+    const op = !p || !visible ? '0' : p.f.toFixed(2);
+    if (op !== issLabel._op) { issLabel.style.opacity = op; issLabel._op = op; }
+    if (op === '0') return;
+    const tf = `translate3d(${p.x.toFixed(0)}px, ${p.y.toFixed(0)}px, 0)`;
+    if (tf !== issLabel._tf) { issLabel.style.transform = tf; issLabel._tf = tf; }
   });
 
   // drag the globe

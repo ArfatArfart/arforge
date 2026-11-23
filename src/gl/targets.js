@@ -170,6 +170,8 @@ export function earthTarget(N, dayImg, nightImg) {
     if (!img) return null;
     const c = document.createElement('canvas'); c.width = S; c.height = S / 2;
     const ctx = c.getContext('2d', { willReadFrequently: true });
+    // GPU bitmaps arrive pre-flipped for WebGL; turn them back the right way up for sampling
+    if (typeof ImageBitmap !== 'undefined' && img instanceof ImageBitmap) { ctx.translate(0, S / 2); ctx.scale(1, -1); }
     ctx.drawImage(img, 0, 0, S, S / 2);
     return ctx.getImageData(0, 0, S, S / 2).data;
   };
