@@ -617,8 +617,8 @@ export class Stage {
     gsap.to(this.rim, { intensity: t.dark ? 22 : 2, duration: dur });
     gsap.to(this.scene, { environmentIntensity: t.env ?? 0.9, duration: dur });
     if (this.bloom) {
-      this.bloom.threshold = t.flat ? 1.5 : 0.97;
-      gsap.to(this.bloom, { strength: t.dark ? 0.42 : t.flat ? 1.35 : 0.08, radius: t.flat ? 0.6 : 0.55, duration: dur, onUpdate: () => { this.bloom.enabled = !this.bloomCut && this.bloom.strength > 0.002; } });
+      this.bloom.threshold = t.flat ? 1.9 : 0.97;
+      gsap.to(this.bloom, { strength: t.dark ? 0.42 : t.flat ? 1.1 : 0.08, radius: t.flat ? 0.42 : 0.55, duration: dur, onUpdate: () => { this.bloom.enabled = !this.bloomCut && this.bloom.strength > 0.002; } });
     }
     if (this.finalPass) gsap.to(this.finalPass.uniforms.uVig, { value: t.dark ? 0.35 : t.flat ? 0 : 0.06, duration: dur });
     if (this.finalPass) gsap.to(this.finalPass.uniforms.uCA, { value: t.flat ? 0.0012 : 0.0025, duration: dur });
