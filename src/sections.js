@@ -77,47 +77,34 @@ export function initHero() {
 }
 
 /* ===================================================================== Work */
-const CURATE = [
-  { name: 'forge-gym-demo', title: 'Forge Athletic Club', img: 'forge-gym-demo.webp', big: true, kind: 'Landing page' },
-  { name: 'medinest-pharmacy-demo', title: 'MediNest Pharmacy', img: 'medinest-pharmacy-demo.webp', big: true, kind: 'Mobile first website' },
-  { name: 'NWF-WEB', title: 'NWF Studio', img: 'nwf-web.webp', desc: 'Studio landing page with full bleed art direction and editorial type.', kind: 'Agency site' },
-  { name: 'stationery-point', title: 'Stationery Point', img: 'stationery-point.webp', desc: 'Storefront website for a local stationery shop, built around a real shop photo.', kind: 'Business site' },
-  { name: 'crazypin', title: 'Crazypin Arena', img: 'crazypin.webp', kind: 'Web app' },
-  { name: 'investigation-workspace', title: 'Investigation Console', img: 'investigation-workspace.webp', desc: 'Investigation workspace with sign in and account creation flows.', kind: 'Web app' },
+// studio concepts: brands we invented to explore type, colour and layout; each one is a real page on this site
+const CONCEPTS = [
+  { slug: 'lumen', title: 'Lumen', kind: 'Fintech app · Landing', desc: 'A bank that explains your money in sentences. Glass cards, a live balance and pricing that fits on one screen.', tags: ['Product', 'Fintech'], big: true },
+  { slug: 'nocturne', title: 'Nocturne', kind: 'Audio brand · Launch', desc: 'Launch page for noise cancelling headphones: neon on black, a gradient wordmark and specs that read like a poster.', tags: ['E-commerce', 'Launch'], big: true },
+  { slug: 'ember-oak', title: 'Ember & Oak', kind: 'Coffee roastery · Shop', desc: 'Editorial serif, a napkin sized menu and a subscription block for a small batch roaster.', tags: ['Shop', 'Editorial'] },
+  { slug: 'pulse-club', title: 'Pulse Club', kind: 'Fitness studio · Booking', desc: 'Condensed type, acid lime and a timetable you can read from across the gym.', tags: ['Booking', 'Brand'] },
+  { slug: 'wander-atlas', title: 'Wander Atlas', kind: 'Travel journal · Journeys', desc: 'Dusk gradients, painted hills and a six day itinerary for small group travel.', tags: ['Travel', 'Content'] },
 ];
 const ARROW = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
 
 export async function initWork() {
   const grid = document.getElementById('work-grid');
-  const d = await github();
-  const repos = d.repos || SNAPSHOT;
-  const byName = Object.fromEntries(repos.map((r) => [r.name, r]));
-  const user = (d.user && d.user.login) || CONFIG.githubUser;
-  grid.innerHTML = CURATE.map((c, i) => {
-    const r = byName[c.name] || SNAPSHOT.find((x) => x.name === c.name) || {};
-    const live = r.homepage || (r.has_pages ? `https://${user.toLowerCase()}.github.io/${c.name}/` : null);
-    const desc = r.description || c.desc || 'Source available on GitHub.';
+  grid.innerHTML = CONCEPTS.map((c, i) => {
+    const url = `${BASE}concepts/${c.slug}/`;
     return `
       <article class="card glass ${c.big ? 'big' : ''}">
-        <a class="card-media" href="${live || r.html_url}" target="_blank" rel="noopener" data-cursor="${live ? 'Open live' : 'Open repo'}">
-          <img src="${BASE}work/${c.img}" alt="Screenshot of the ${c.title} live site" loading="lazy" decoding="async" width="1200" height="750" />
+        <a class="card-media" href="${url}" target="_blank" rel="noopener" data-cursor="Open concept">
+          <img src="${BASE}work/concepts/${c.slug}.webp" alt="The ${c.title} concept site" loading="lazy" decoding="async" width="1200" height="750" />
           <span class="shine" aria-hidden="true"></span>
         </a>
         <div class="card-body">
           <div class="card-top"><h3 class="title-1">${c.title}</h3><span class="caption-3 mono card-idx">${String(i + 1).padStart(2, '0')}</span></div>
-          <p class="body-6 card-desc">${desc}</p>
-          <div class="card-meta caption-4">
-            ${r.language ? `<span class="lang"><i></i>${r.language}</span><span aria-hidden="true">·</span>` : ''}
-            <span>${c.kind}</span>
-            ${r.updated_at ? `<span aria-hidden="true">·</span><span>Updated ${ago(r.updated_at)}</span>` : ''}
-          </div>
-          <div class="card-links">
-            ${live ? `<a class="caption-1" href="${live}" target="_blank" rel="noopener">Live site ${ARROW}</a>` : ''}
-            ${r.html_url ? `<a class="caption-1" href="${r.html_url}" target="_blank" rel="noopener" data-cursor="Source">Source ${ARROW}</a>` : ''}
-          </div>
+          <p class="body-6 card-desc">${c.desc}</p>
+          <div class="card-meta caption-4"><span>${c.kind}</span><span aria-hidden="true">·</span><span>Studio concept</span></div>
+          <div class="card-links"><a class="caption-1" href="${url}" target="_blank" rel="noopener">Open the concept ${ARROW}</a></div>
         </div>
       </article>`;
-  }).join('') + (d.live ? '' : `<p class="work-error caption-2">GitHub is not answering right now, so these cards use a saved snapshot. Live links still work.</p>`);
+  }).join('');
   grid.dataset.why = 'Cards drop in with a slight tilt that settles, like prints laid on a desk, and lean toward your cursor so the one you are reading comes forward.';
 
   const cards = [...grid.querySelectorAll('.card')];
