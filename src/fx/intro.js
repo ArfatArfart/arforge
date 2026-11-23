@@ -32,16 +32,19 @@ float radius(vec2 c, float t, float D){
   return r;
 }
 // gooey union (smooth minimum of distances) of the 3x3 neighbourhood on a 45 degree grid
-float field(vec2 p, float t, float D, float add){
+// one walk over the neighbourhood gives all three layers: yellow core, magenta and cyan rims
+vec3 fields(vec2 p, float t, float D, float rim){
   vec2 g = rot(p) / uGap;
   vec2 id = floor(g);
-  float d = 1e5, k = uGap * 0.32;
+  vec3 d = vec3(1e5);
+  float k = uGap * 0.32;
   for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
     vec2 cid = id + vec2(float(i), float(j)) + 0.5;
     vec2 c = vec2(cid.x - cid.y, cid.x + cid.y) * 0.70710678 * uGap;
     float r = radius(c, t, D);
     if (r <= 0.02) continue;
-    d = smin(d, length(p - c) - r - add, k);
+    float e = length(p - c) - r;
+    d = vec3(smin(d.x, e, k), smin(d.y, e - 3.0 * rim, k), smin(d.z, e - 1.5 * rim, k));
   }
   return d;
 }
@@ -72,9 +75,8 @@ void main(){
   col = mix(col, uY, xa);
   // the field: three slightly different growths give the cyan and magenta rims
   float rim = 1.0 - ease((t - 2.1) / 0.4);
-  float dy = field(p, t, D, 0.0);
-  float dc = field(p, t, D, 3.0 * rim);
-  float dm = field(p, t, D, 1.5 * rim);
+  vec3 f3 = fields(p, t, D, rim);
+  float dy = f3.x, dc = f3.y, dm = f3.z;
   float cC = (1.0 - smoothstep(-0.8, 0.8, dc)) * rim;
   float cM = (1.0 - smoothstep(-0.8, 0.8, dm)) * rim;
   float cY = 1.0 - smoothstep(-0.8, 0.8, dy);

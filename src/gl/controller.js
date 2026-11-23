@@ -174,7 +174,19 @@ export function makePad(src, { envMap, fx } = {}) {
   the middle one lit, and the mute LED, orange while the button is held.
 */
 /** add the lights; call after the shot has been sampled into particles */
-export function addPadLights(holder) {
+let GLOW_TEX = null;
+function glowTexture() {
+  if (GLOW_TEX) return GLOW_TEX;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  GLOW_TEX = new THREE.CanvasTexture(c);
+  return GLOW_TEX;
+}
+
+/** glowSprites: where no bloom pass runs (phones), soft light sprites along the bar make the same glow */
+export function addPadLights(holder, { glowSprites = false } = {}) {
   const u = holder.userData, root = u.root;
   holder.updateMatrixWorld(true);
   u.bars = [];
@@ -209,8 +221,18 @@ export function addPadLights(holder) {
       const core = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.012, 8, false), new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0) }));
       tp.add(core);
       u.bars.push(core.material);
+      if (glowSprites) {
+        for (let k = 0; k < 9; k++) {
+          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(0, 0, 0), blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true }));
+          sp.position.copy(curve.getPoint(0.12 + (k / 8) * 0.88));
+          sp.scale.setScalar(0.11);
+          sp.renderOrder = 4;
+          tp.add(sp);
+          (u.glows || (u.glows = [])).push(sp.material);
+        }
+      }
       // a real light source in the gap, so the glow lands on the touchpad edge and the shell beside it
-      const lamp = new THREE.PointLight('#ff2a2a', 0, 0.5, 2);
+      const lamp = new THREE.PointLight('#2f7dff', 0, 0.6, 2);
       lamp.position.copy(curve.getPoint(0.55)).addScaledVector(view, 0.06);
       tp.add(lamp);
       (u.lamps || (u.lamps = [])).push(lamp);
@@ -256,8 +278,10 @@ export function animatePad(pad, px, py, press, dt, time = 0, on = 1) {
   u.triggers.forEach((t) => { t.o.rotation.x = t.rx + u.press * 0.32; });
   // the light bar breathes slowly, the way the real one idles
   const k = on * (0.85 + 0.15 * Math.sin(time * 1.6));
-  if (u.bars) u.bars.forEach((m) => m.color.setRGB(9 * k, 0.35 * k, 0.45 * k));
-  if (u.lamps) u.lamps.forEach((l) => { l.intensity = 0.006 * k; });
+  // DualSense blue: a hot core that blooms, lamps that light the plastic around it
+  if (u.bars) u.bars.forEach((m) => m.color.setRGB(0.5 * k, 2.6 * k, 16 * k));
+  if (u.lamps) u.lamps.forEach((l) => { l.intensity = 0.02 * k; });
+  if (u.glows) u.glows.forEach((m) => m.color.setRGB(0.12 * k, 0.45 * k, 1.6 * k));
   if (u.leds) u.leds.forEach((l) => { l.material.opacity = on; });
   if (u.muteMat) u.muteMat.opacity = on * u.press;
 }
