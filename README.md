@@ -18,8 +18,9 @@ of text moves for a reason, and every number on the page is measured live.
 | Earth day, night lights, clouds, normals, star map | NASA Blue Marble and Black Marble (via the three-globe package) | Public domain |
 | Technology logos | [Simple Icons](https://simpleicons.org) | CC0 |
 | Script type | Yellowtail via Fontsource | OFL |
-| Phone and laptop screens, work screenshots | Headless captures of Arfat's live GitHub Pages projects | Own work |
-| Work data, repo counts, terminal requests, ISS position | GitHub REST API and wheretheiss.at, called live from the browser | n/a |
+| Work section concepts (Lumen, Nocturne, Ember & Oak, Pulse Club, Wander Atlas) | Designed and built in the studio, hosted under `public/concepts/` | Own work |
+| MacBook and iPhone screens | A studio wallpaper painted in code (`src/gl/wallpaper.js`) | Own work |
+| Repo counts, terminal requests, ISS position | GitHub REST API and wheretheiss.at, called live from the browser | n/a |
 
 ## The ideas
 

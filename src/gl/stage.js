@@ -742,9 +742,12 @@ export class Stage {
       for (const id of ['bust', 'laptop', 'board', 'rings', 'earth']) {
         const sh = this.byId[id], top = this.anchorTop[id];
         if (top == null || !sh.layout) continue;
-        sh.pivot.position.y = sh.layout.y + Math.max(0, window.scrollY - top) * k;
+        const lift = Math.max(0, window.scrollY - top) * k;
+        sh.pivot.position.y = sh.layout.y + lift;
+        // once it has scrolled fully off the top, it is not drawn at all
+        sh.offscreen = lift > this.viewH * 0.95;
       }
-    }
+    } else if (this.anchorTop) for (const sh of this.shots) sh.offscreen = false;
     A.pivot.updateMatrixWorld(true); if (B !== A) B.pivot.updateMatrixWorld(true);
     fu.uFromM.value.copy(fromM || A.spin.matrixWorld);
     fu.uToM.value.copy(B.spin.matrixWorld);
@@ -763,7 +766,7 @@ export class Stage {
       sh.uniforms.uDissolve.value = d;
       sh.uniforms.uTime.value = time;
       if (sh.uniforms.uAtmo) sh.uniforms.uAtmo.value = 1 - d;
-      sh.pivot.visible = d < 0.999;
+      sh.pivot.visible = d < 0.999 && !sh.offscreen;
       sh.vis = 1 - d;
       // hidden models are skipped by the scene's matrix pass instead of being recomputed every frame
       sh.pivot.matrixWorldAutoUpdate = sh.pivot.visible || sh === A || sh === B;
