@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pulse Club · a concept by Arfat Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0b0b0b;--fg:#f5f5f0;--lime:#c6ff3d;--muted:#8a8a83;--line:rgba(255,255,255,.12)}
+  html{background:var(--bg)}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:1220px;margin:0 auto;padding:0 32px}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:24px 0}
+  .logo{font-family:Anton;font-size:26px;letter-spacing:.04em}.logo b{color:var(--lime)}
+  nav ul{display:flex;gap:30px;list-style:none;font-weight:500;font-size:14px;color:var(--muted)}
+  .btn{display:inline-block;background:var(--lime);color:#0b0b0b;font-weight:700;padding:15px 28px;text-decoration:none;font-size:15px;text-transform:uppercase;letter-spacing:.04em;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+  .hero{position:relative;padding:40px 0 70px}
+  h1{font-family:Anton;font-size:clamp(70px,12vw,186px);line-height:.86;text-transform:uppercase;letter-spacing:-.005em}
+  h1 .hl{color:#0b0b0b;background:var(--lime);padding:0 .12em;display:inline-block;transform:skew(-8deg)}
+  .heroRow{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin-top:34px;flex-wrap:wrap}
+  .lead{max-width:420px;color:var(--muted);line-height:1.6;font-size:17px}
+  .chips{display:flex;gap:10px;flex-wrap:wrap}.chips span{border:1px solid var(--line);padding:10px 16px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .pulse{width:100%;height:120px;margin-top:40px}
+  section{padding:90px 0;border-top:1px solid var(--line)}
+  h2{font-family:Anton;text-transform:uppercase;font-size:clamp(44px,6vw,90px);line-height:.92;margin-bottom:40px}
+  h2 span{color:var(--lime)}
+  .tt{display:grid;grid-template-columns:110px repeat(5,1fr);gap:8px;font-size:14px}
+  .tt div{padding:16px 12px;background:#141414;min-height:62px}
+  .tt .h{background:none;color:var(--muted);font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.08em;min-height:0}
+  .tt .on{background:var(--lime);color:#0b0b0b;font-weight:700}.tt .alt{background:#262626;font-weight:700}
+  .coaches{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .coach{background:#141414;padding:26px;position:relative;overflow:hidden}
+  .av{width:100%;aspect-ratio:1;display:grid;place-items:center;font-family:Anton;font-size:90px;color:#0b0b0b;margin-bottom:20px}
+  .coach h3{font-family:Anton;font-size:30px;text-transform:uppercase}.coach p{color:var(--muted);font-size:14px;margin-top:6px}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .plan{border:1px solid var(--line);padding:40px}.plan.best{background:var(--lime);color:#0b0b0b;border:0}
+  .plan b{font-family:Anton;font-size:80px;display:block;line-height:1;margin:16px 0}.plan li{list-style:none;padding:10px 0;border-top:1px solid rgba(127,127,127,.3);font-weight:500}
+  footer{padding:90px 0 30px;border-top:1px solid var(--line)}
+  footer h2{font-size:clamp(60px,10vw,150px)}
+  .foot{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:40px}
+  @media (max-width:900px){.wrap{padding:0 20px}nav ul{display:none}.tt{grid-template-columns:70px repeat(5,minmax(80px,1fr));overflow-x:auto}.coaches,.plans{grid-template-columns:1fr}section{padding:64px 0}.foot{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav><div class="logo">PULSE<b>/</b>CLUB</div><ul><li>Classes</li><li>Coaches</li><li>Timetable</li><li>Locations</li></ul><a class="btn" href="#">Join</a></nav>
+    <div class="hero">
+      <h1>Move like<br />you <span class="hl">mean</span> it.</h1>
+      <div class="heroRow"><p class="lead">Forty-five minute classes, coaches who learn your name, and a heart-rate screen that shows the whole room working.</p><div class="chips"><span>28 classes a week</span><span>First week free</span><span>Open 5am–11pm</span></div></div>
+      <svg class="pulse" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70 H360 L390 70 410 20 440 110 470 40 490 70 H760 L790 70 810 10 840 115 870 30 890 70 H1200" fill="none" stroke="#c6ff3d" stroke-width="4" stroke-linejoin="round"/></svg>
+    </div>
+    <section>
+      <h2>This <span>week.</span></h2>
+      <div class="tt">
+        <div class="h"></div><div class="h">Mon</div><div class="h">Tue</div><div class="h">Wed</div><div class="h">Thu</div><div class="h">Fri</div>
+        <div class="h">06:30</div><div class="on">Sprint</div><div>Mobility</div><div class="on">Sprint</div><div>Row</div><div class="alt">Power</div>
+        <div class="h">12:15</div><div class="alt">Box</div><div class="on">Lift</div><div>Core</div><div class="on">Lift</div><div>Stretch</div>
+        <div class="h">18:30</div><div class="on">Ride</div><div class="alt">Box</div><div class="on">Ride</div><div class="alt">Power</div><div class="on">Ride</div>
+      </div>
+    </section>
+    <section>
+      <h2>Your <span>coaches.</span></h2>
+      <div class="coaches">
+        <div class="coach"><div class="av" style="background:linear-gradient(135deg,#c6ff3d,#64d61e)">MK</div><h3>Maya K.</h3><p>Sprint · Ride · 9 years coaching</p></div>
+        <div class="coach"><div class="av" style="background:linear-gradient(135deg,#f5f5f0,#a3a39b)">JO</div><h3>Jonah O.</h3><p>Lift · Power · former decathlete</p></div>
+        <div class="coach"><div class="av" style="background:linear-gradient(135deg,#ff6b3d,#ffb23d)">RS</div><h3>Ria S.</h3><p>Box · Mobility · physio trained</p></div>
+      </div>
+    </section>
+    <section>
+      <h2>Pick your <span>pace.</span></h2>
+      <div class="plans">
+        <div class="plan"><span>Flex</span><b>€49</b><ul><li>8 classes a month</li><li>Any location</li><li>Heart-rate strap</li></ul></div>
+        <div class="plan best"><span>Unlimited</span><b>€89</b><ul><li>Every class, every day</li><li>Guest passes</li><li>Monthly body scan</li></ul></div>
+      </div>
+    </section>
+  </div>
+  <footer><div class="wrap"><h2>See you at <span>6:30.</span></h2><a class="btn" href="#">Book a free class</a><div class="foot"><span>© 2027 Pulse Club. A design concept by Arfat Studio, not a real gym.</span><span>Locations · Careers · Contact</span></div></div></footer>
+</body>
+</html>

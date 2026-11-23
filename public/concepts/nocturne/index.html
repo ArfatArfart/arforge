@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nocturne · a concept by Arfat Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#07070c;--fg:#f2f0ff;--muted:#8f8aa8;--v:#8b5cff;--c:#34e1ff;--p:#ff4fd8;--line:rgba(255,255,255,.1)}
+  html{background:var(--bg)}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+  nav{display:flex;justify-content:space-between;align-items:center;padding:26px 0}
+  .logo{font-family:Syne;font-weight:800;letter-spacing:.16em;font-size:18px}.logo b{color:var(--c)}
+  nav ul{display:flex;gap:32px;list-style:none;color:var(--muted);font-size:14px}
+  .btn{display:inline-block;border-radius:999px;padding:14px 26px;font-weight:600;font-size:14px;text-decoration:none;color:#07070c;background:linear-gradient(90deg,var(--c),var(--v),var(--p))}
+  .btn.line{background:none;color:var(--fg);border:1px solid var(--line)}
+  .hero{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:30px;padding:50px 0 90px;position:relative}
+  .hero::before{content:"";position:absolute;width:620px;height:620px;right:-120px;top:-60px;background:radial-gradient(circle,rgba(139,92,255,.45),transparent 65%);filter:blur(20px);z-index:-1}
+  .tag{color:var(--c);font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+  h1{font-family:Syne;font-weight:800;font-size:clamp(56px,8vw,118px);line-height:.9;letter-spacing:-.03em;margin:20px 0}
+  h1 span{background:linear-gradient(90deg,var(--c),var(--v),var(--p));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--muted);font-size:18px;line-height:1.6;max-width:470px}
+  .row{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
+  .art{justify-self:center;width:min(480px,100%)}
+  .band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:22px 0;font-family:Syne;font-weight:600;font-size:22px;color:var(--muted);white-space:nowrap;overflow:hidden}
+  .band span{color:var(--fg)}
+  section{padding:100px 0}
+  h2{font-family:Syne;font-weight:800;font-size:clamp(36px,4.6vw,64px);line-height:1;letter-spacing:-.02em;max-width:720px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:50px}
+  .card{border:1px solid var(--line);border-radius:26px;padding:30px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01))}
+  .card b{font-family:Syne;font-size:58px;letter-spacing:-.03em;display:block;background:linear-gradient(90deg,var(--c),var(--v));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .card h3{font-size:18px;margin:12px 0 8px}.card p{color:var(--muted);line-height:1.6;font-size:15px}
+  .swatches{display:flex;gap:26px;margin-top:46px;flex-wrap:wrap}
+  .sw{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted);font-size:14px}
+  .sw i{width:150px;height:150px;border-radius:50%;display:block;box-shadow:0 30px 60px -20px rgba(0,0,0,.8),inset 0 -20px 40px rgba(0,0,0,.35)}
+  blockquote{font-family:Syne;font-weight:600;font-size:clamp(28px,3.4vw,46px);line-height:1.15;max-width:900px}
+  blockquote cite{display:block;font-family:Inter;font-style:normal;font-size:15px;color:var(--muted);margin-top:22px}
+  footer{padding:110px 0 30px;text-align:center;background:radial-gradient(ellipse at 50% 0,rgba(52,225,255,.16),transparent 60%)}
+  footer h2{margin:0 auto 30px}
+  .foot{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:90px;border-top:1px solid var(--line);padding-top:24px;text-align:left}
+  @media (max-width:900px){.wrap{padding:0 20px}nav ul{display:none}.hero{grid-template-columns:1fr;padding:24px 0 60px}.grid3{grid-template-columns:1fr}section{padding:70px 0}.sw i{width:96px;height:96px}.foot{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav><div class="logo">NOCTURNE<b>.</b></div><ul><li>Shop</li><li>Sound</li><li>Story</li><li>Support</li></ul><a class="btn" href="#">Pre-order</a></nav>
+    <div class="hero">
+      <div>
+        <p class="tag">N1 Wireless · 2027</p>
+        <h1>Hear the <span>dark.</span></h1>
+        <p class="lead">Active silence that adapts fifty thousand times a second, sixty hours on one charge, and a titanium band you forget you are wearing.</p>
+        <div class="row"><a class="btn" href="#">Pre-order · €349</a><a class="btn line" href="#">Listen to the silence</a></div>
+      </div>
+      <svg class="art" viewBox="0 0 480 480" aria-hidden="true">
+        <defs><linearGradient id="n" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34e1ff"/><stop offset=".5" stop-color="#8b5cff"/><stop offset="1" stop-color="#ff4fd8"/></linearGradient>
+        <filter id="gl"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <path d="M110 250 C110 120 370 120 370 250" fill="none" stroke="url(#n)" stroke-width="16" stroke-linecap="round" filter="url(#gl)"/>
+        <g filter="url(#gl)"><rect x="70" y="240" width="96" height="150" rx="44" fill="#12121c" stroke="url(#n)" stroke-width="5"/><rect x="314" y="240" width="96" height="150" rx="44" fill="#12121c" stroke="url(#n)" stroke-width="5"/></g>
+        <g fill="none" stroke="url(#n)" stroke-width="2" opacity=".55"><circle cx="240" cy="315" r="40"/><circle cx="240" cy="315" r="72"/><circle cx="240" cy="315" r="104" opacity=".6"/><circle cx="240" cy="315" r="136" opacity=".3"/></g>
+      </svg>
+    </div>
+  </div>
+  <div class="band"><div class="wrap"><span>Spatial audio</span> · Lossless · <span>60 hours</span> · Titanium hinge · <span>Adaptive silence</span> · USB-C · <span>11 grams per cup</span></div></div>
+  <div class="wrap">
+    <section>
+      <h2>Engineered for the quiet you never had.</h2>
+      <div class="grid3">
+        <div class="card"><b>−48 dB</b><h3>Adaptive silence</h3><p>Eight microphones listen to the room and cancel it before you notice it was there.</p></div>
+        <div class="card"><b>60 h</b><h3>A week of music</h3><p>Ten minutes on USB-C gives you five more hours. The case never needs a charger.</p></div>
+        <div class="card"><b>11 g</b><h3>Titanium, not plastic</h3><p>A hinge machined from one block, so the band keeps its shape for a decade.</p></div>
+      </div>
+    </section>
+    <section>
+      <h2>Three finishes. All of them dark.</h2>
+      <div class="swatches">
+        <div class="sw"><i style="background:radial-gradient(circle at 35% 30%,#3a3a48,#0b0b10 70%)"></i>Obsidian</div>
+        <div class="sw"><i style="background:radial-gradient(circle at 35% 30%,#6ee7ff,#3b2a9e 70%)"></i>Aurora</div>
+        <div class="sw"><i style="background:radial-gradient(circle at 35% 30%,#ff8ad8,#4a1d5e 70%)"></i>Dusk</div>
+      </div>
+    </section>
+    <section><blockquote>"The first headphones where turning them on feels like turning the city off."<cite>From a listening session, Berlin</cite></blockquote></section>
+  </div>
+  <footer><div class="wrap"><h2>Silence, shipped worldwide.</h2><a class="btn" href="#">Pre-order N1</a><div class="foot"><span>© 2027 Nocturne. A design concept by Arfat Studio, not a real brand.</span><span>Shipping · Returns · Warranty</span></div></div></footer>
+</body>
+</html>

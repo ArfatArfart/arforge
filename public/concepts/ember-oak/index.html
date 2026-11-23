@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ember &amp; Oak · a concept by Arfat Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--cream:#f4ede2;--esp:#2b1d16;--terra:#c8553d;--sage:#7d8f69;--muted:#7a6a5d;--line:rgba(43,29,22,.15)}
+  html{background:var(--esp)}
+  body{font-family:"Work Sans",system-ui,sans-serif;background:var(--cream);color:var(--esp);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 32px}
+  nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:24px 0;border-bottom:1px solid var(--line)}
+  nav ul{display:flex;gap:26px;list-style:none;font-size:14px;color:var(--muted)}nav ul:last-child{justify-content:flex-end}
+  .logo{font-family:Fraunces;font-style:italic;font-size:30px;font-weight:400}
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;align-items:center;padding:70px 0}
+  .badge{display:inline-block;border:1px solid var(--esp);border-radius:999px;padding:6px 14px;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+  h1{font-family:Fraunces;font-weight:400;font-size:clamp(52px,7.2vw,104px);line-height:.95;letter-spacing:-.03em;margin:22px 0}
+  h1 em{color:var(--terra)}
+  .lead{font-size:18px;line-height:1.65;color:var(--muted);max-width:480px}
+  .btn{display:inline-block;margin-top:30px;background:var(--esp);color:var(--cream);padding:15px 26px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px}
+  .art{justify-self:center;width:min(420px,100%)}
+  section{padding:90px 0;border-top:1px solid var(--line)}
+  .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--terra);font-weight:600}
+  h2{font-family:Fraunces;font-weight:400;font-size:clamp(36px,4.6vw,62px);line-height:1;letter-spacing:-.02em;margin:12px 0 40px;max-width:720px}
+  .roasts{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .roast{background:#fffaf2;border:1px solid var(--line);border-radius:22px;padding:26px}
+  .beans{display:flex;gap:8px;margin-bottom:22px}.beans i{width:34px;height:46px;border-radius:50%;display:block;transform:rotate(18deg);box-shadow:inset -6px 0 0 rgba(0,0,0,.18)}
+  .roast h3{font-family:Fraunces;font-size:28px;font-weight:400}.roast p{color:var(--muted);margin:8px 0 18px;line-height:1.55;font-size:15px}
+  .roast div{display:flex;justify-content:space-between;font-weight:600;font-size:15px;border-top:1px dashed var(--line);padding-top:14px}
+  .menu{display:grid;grid-template-columns:1fr 1fr;gap:10px 70px}
+  .item{display:flex;align-items:baseline;gap:10px;font-size:18px;padding:12px 0}
+  .item span:nth-child(2){flex:1;border-bottom:1px dotted rgba(43,29,22,.35);transform:translateY(-4px)}
+  .item b{font-family:Fraunces;font-weight:700}
+  .origins{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .origins li{list-style:none;padding:14px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;font-size:17px}
+  .sub{background:var(--terra);color:#fff8ef;border-radius:32px;padding:64px;display:grid;grid-template-columns:1.3fr 1fr;gap:30px;align-items:center}
+  .sub h2{color:#fff8ef;margin:0}.sub .btn{background:#fff8ef;color:var(--terra)}
+  footer{background:var(--esp);color:#e9dccb;padding:80px 0 30px;margin-top:90px}
+  footer .logo{font-size:56px;color:var(--cream)}
+  .foot{display:flex;justify-content:space-between;font-size:13px;opacity:.7;margin-top:60px;border-top:1px solid rgba(255,255,255,.15);padding-top:22px}
+  @media (max-width:900px){.wrap{padding:0 20px}nav{grid-template-columns:1fr;justify-items:center}nav ul{display:none}.hero,.origins,.sub{grid-template-columns:1fr}.hero{padding:40px 0}.roasts{grid-template-columns:1fr}.menu{grid-template-columns:1fr;gap:0}.sub{padding:40px 28px}section{padding:64px 0}.foot{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav><ul><li>Shop</li><li>Subscriptions</li></ul><div class="logo">Ember &amp; Oak</div><ul><li>Cafés</li><li>Journal</li></ul></nav>
+    <div class="hero">
+      <div><span class="badge">Small batch · since 2019</span><h1>Slow coffee, roasted on <em>Tuesdays.</em></h1><p class="lead">Forty kilos a week from farms we have visited, roasted by hand in a converted bakery and posted the same afternoon.</p><a class="btn" href="#">Shop this week's roast</a></div>
+      <svg class="art" viewBox="0 0 420 420" aria-hidden="true">
+        <circle cx="210" cy="230" r="170" fill="#e9dcc8"/>
+        <path d="M120 200 h180 v70 a90 90 0 0 1 -180 0z" fill="#2b1d16"/>
+        <path d="M300 215 a36 36 0 0 1 0 70" fill="none" stroke="#2b1d16" stroke-width="16"/>
+        <ellipse cx="210" cy="200" rx="90" ry="18" fill="#6b3f2a"/><ellipse cx="200" cy="196" rx="40" ry="7" fill="#c98b5a" opacity=".7"/>
+        <g fill="none" stroke="#c8553d" stroke-width="7" stroke-linecap="round"><path d="M180 160 c-14 -22 14 -34 0 -60"/><path d="M212 158 c-14 -22 14 -34 0 -64"/><path d="M244 160 c-14 -22 14 -34 0 -60"/></g>
+        <ellipse cx="210" cy="372" rx="150" ry="14" fill="#2b1d16" opacity=".12"/>
+      </svg>
+    </div>
+    <section>
+      <p class="kicker">This week's roast</p><h2>Three coffees, one oven, no shortcuts.</h2>
+      <div class="roasts">
+        <div class="roast"><div class="beans"><i style="background:#5b3a26"></i><i style="background:#6e4630"></i><i style="background:#4a2e1f"></i></div><h3>Huila, Colombia</h3><p>Red apple, panela, a long cocoa finish. Our house espresso.</p><div><span>250 g</span><span>€14</span></div></div>
+        <div class="roast"><div class="beans"><i style="background:#7a4b2d"></i><i style="background:#8a5636"></i><i style="background:#6c4227"></i></div><h3>Guji, Ethiopia</h3><p>Jasmine, bergamot and peach. Brew it slow, drink it black.</p><div><span>250 g</span><span>€16</span></div></div>
+        <div class="roast"><div class="beans"><i style="background:#3e271a"></i><i style="background:#4d3020"></i><i style="background:#352116"></i></div><h3>Cerrado, Brazil</h3><p>Hazelnut and milk chocolate. Made for flat whites.</p><div><span>250 g</span><span>€12</span></div></div>
+      </div>
+    </section>
+    <section>
+      <p class="kicker">At the bar</p><h2>The menu fits on a napkin.</h2>
+      <div class="menu">
+        <div class="item"><span>Espresso</span><span></span><b>3.20</b></div><div class="item"><span>Filter of the day</span><span></span><b>4.00</b></div>
+        <div class="item"><span>Flat white</span><span></span><b>4.40</b></div><div class="item"><span>Cold brew tonic</span><span></span><b>5.20</b></div>
+        <div class="item"><span>Cortado</span><span></span><b>3.80</b></div><div class="item"><span>Cardamom bun</span><span></span><b>3.60</b></div>
+      </div>
+    </section>
+    <section class="origins">
+      <svg viewBox="0 0 460 300" aria-hidden="true"><rect width="460" height="300" rx="26" fill="#e9dcc8"/><g fill="#d6c4aa"><ellipse cx="130" cy="150" rx="70" ry="95"/><ellipse cx="300" cy="120" rx="110" ry="70"/><ellipse cx="360" cy="220" rx="50" ry="40"/></g><g fill="#c8553d"><circle cx="120" cy="120" r="9"/><circle cx="150" cy="200" r="9"/><circle cx="300" cy="150" r="9"/></g><g fill="none" stroke="#c8553d" stroke-width="2" opacity=".5"><circle cx="120" cy="120" r="20"/><circle cx="150" cy="200" r="20"/><circle cx="300" cy="150" r="20"/></g></svg>
+      <div><p class="kicker">Where it grows</p><h2 style="margin-bottom:20px">We know every farmer by name.</h2><ul><li><span>Huila</span><span>1,850 m</span></li><li><span>Guji</span><span>2,100 m</span></li><li><span>Cerrado</span><span>1,150 m</span></li></ul></div>
+    </section>
+    <div class="sub"><h2>Fresh coffee every second Tuesday.</h2><div><p style="line-height:1.6;margin-bottom:6px">Pause, skip or change the roast any time. Postage is on us.</p><a class="btn" href="#">Start a subscription</a></div></div>
+  </div>
+  <footer><div class="wrap"><div class="logo">Ember &amp; Oak</div><div class="foot"><span>© 2027 Ember &amp; Oak. A design concept by Arfat Studio, not a real roastery.</span><span>Wholesale · Careers · Contact</span></div></div></footer>
+</body>
+</html>
